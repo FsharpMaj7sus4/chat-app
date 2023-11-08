@@ -22,10 +22,10 @@ const createSendToken = (user, statusCode, res, message) => {
   const token = signToken(user.id);
   res.cookie('jwt', token, cookiesOptions);
 
-  res.status(statusCode).json({
-    status: 'success',
-    message,
-    token,
+  res.render('chat', {
+    // status: 'success',
+    // message,
+    // token,
     data: {
       user,
     },
@@ -49,7 +49,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   phoneNumber = String(phoneNumber);
-  
+
   // 2) if user exist && password is correct
   const user = await User.findOne({
     where: {
@@ -105,6 +105,43 @@ exports.protect = catchAsync(async (req, res, next) => {
   req.user = currentUser;
   next();
 });
+
+exports.protectWithRendering = catchAsync(async (req, res, next) => {
+    // point: WE USULLY SEND TOKEN IN HEADER REQUEST (NOT BODY) THIS WAY => authorization: brearer <TOKEN>
+    // or send token in cookies
+    // 1) check if token exists and it's there
+    let token;
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      // req.headers.authorization.split(' ') => ['brearer', '<TOKEN>']
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies.jwt) {
+      token = req.cookies.jwt;
+    }
+    if (!token) {
+      res.redirect('/login');
+    }
+  
+    // 2) verification token
+    const decodeToken = await promisify(jwt.verify)(
+      token,
+      process.env.JWT_SECRET
+    );
+  
+    // 3) check if user still exists
+    const currentUser = await User.findById(decodeToken.id);
+    if (!currentUser) {
+        return res.redirect('/login');
+    }
+  
+    // if compiler reachs at this posit and no error has occured,
+    // it means user have token correctly, so let him/her to access current middleware
+    req.user = currentUser;
+
+    next();
+  });
 
 exports.restrictTo = function (...roles) {
   // roles => ['admin', 'lead-guide'] , req.user.role => 'user'
