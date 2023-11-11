@@ -13,10 +13,10 @@ router.get('/login', function (req,res,next) {
   });
 });
 
-router.get('/signup', function (req,res,next) {
-  return res.render('signup', {
-    message: ''
-  });
-});
+// router.get('/signup', function (req,res,next) {
+//   return res.render('signup', {
+//     message: ''
+//   });
+// });
 
 module.exports = router
