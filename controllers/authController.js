@@ -36,6 +36,12 @@ exports.signUp = catchAsync(async (req, res, next) => {
     name: req.body.name,
     phoneNumber: req.body.phoneNumber,
   })
+  const globalRoom = await Room.findOne({
+    where: {
+      name: "global",
+    },
+  })
+  await newUser.addRoom(globalRoom)
 
   createSendToken(
     newUser,
