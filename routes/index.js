@@ -1,5 +1,5 @@
 var express = require('express');
-const { protect, protectWithRendering } = require('../controllers/authController');
+const { protect } = require('../controllers/authController');
 var router = express.Router();
 
 /* GET home page. */
