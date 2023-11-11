@@ -1,9 +1,8 @@
-const { promisify } = require('util');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const catchAsync = require('../utils/catchAsync');
-const AppError = require('../utils/AppError');
-const Room = require('../models/Room');
+const { promisify } = require("util")
+const jwt = require("jsonwebtoken")
+const { User, Room } = require("../models")
+const catchAsync = require("../utils/catchAsync")
+const AppError = require("../utils/AppError")
 
 const signToken = id =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -110,7 +109,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   // if compiler reachs at this posit and no error has occured,
-  // it means user have token correctly, so let him/her to access current middleware
+  // it means user have token correctly, so let them access current middleware
   req.user = currentUser
   next()
 })

@@ -1,5 +1,6 @@
-const { Sequelize } = require("sequelize")
-const pg = require("pg");
+const Sequelize = require("sequelize")
+const defineUser = require("./User")
+const defineRoom = require("./Room")
 
 const { DB_DB, DB_USER, DB_PASSWORD, DB_PORT, DB_HOST, DB_DIALECT } =
   process.env
@@ -11,21 +12,20 @@ const sequelize = new Sequelize(DB_DB, DB_USER, DB_PASSWORD, {
   dialect: DB_DIALECT,
 })
 
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log("database is connected successfully!")
-    sequelize
-      .sync()
-      .then(() => {
-        console.log("database is synced...")
-      })
-      .catch(() => {
-        console.log("database is not synced!")
-      })
-  })
-  .catch(error => {
-    console.log("connection error: ", error)
-  })
+const db = {}
 
-module.exports = sequelize
+db.User = defineUser(Sequelize, sequelize)
+db.Room = defineRoom(Sequelize, sequelize)
+
+db.Room.belongsToMany(db.User, {
+  through: "UserRoom",
+})
+
+db.User.belongsToMany(db.Room, {
+  through: "UserRoom",
+})
+
+db.Sequelize = Sequelize
+db.sequelize = sequelize
+
+module.exports = db

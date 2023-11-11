@@ -9,11 +9,8 @@ dotenv.config()
 const indexRouter = require("./routes/index")
 const usersRouter = require("./routes/userRoutes")
 const authRouter = require("./routes/authRoutes")
-const globalErrorHandler = require("./utils/globalErrorHandler");
-const db = require('./models')
-const Room = require('./models/Room');
-const User = require('./models/User');
-
+const globalErrorHandler = require("./utils/globalErrorHandler")
+const db = require("./models")
 
 const app = express()
 
@@ -47,5 +44,28 @@ app.use(function (req, res, next) {
 //   res.render('error');
 // });
 app.use(globalErrorHandler)
+
+db.sequelize
+  .authenticate()
+  .then(() => {
+    console.log("database is connected successfully!")
+    db.sequelize
+      .sync()
+      .then(async () => {
+        await db.Room.findOrCreate({
+          where: { name: "global" },
+          defaults: {
+            name: "global",
+          },
+        })
+        console.log("database is synced...")
+      })
+      .catch(err => {
+        console.log("database is not synced!", err)
+      })
+  })
+  .catch(error => {
+    console.log("connection error: ", error)
+  })
 
 module.exports = app
