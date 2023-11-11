@@ -9,7 +9,11 @@ dotenv.config()
 const indexRouter = require("./routes/index")
 const usersRouter = require("./routes/userRoutes")
 const authRouter = require("./routes/authRoutes")
-const globalErrorHandler = require("./utils/globalErrorHandler")
+const globalErrorHandler = require("./utils/globalErrorHandler");
+const db = require('./models')
+const Room = require('./models/Room');
+const User = require('./models/User');
+
 
 const app = express()
 

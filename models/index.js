@@ -1,8 +1,9 @@
 const { Sequelize } = require("sequelize")
-const pg = require("pg")
+const pg = require("pg");
+
 const { DB_DB, DB_USER, DB_PASSWORD, DB_PORT, DB_HOST, DB_DIALECT } =
   process.env
-  
+
 const sequelize = new Sequelize(DB_DB, DB_USER, DB_PASSWORD, {
   port: DB_PORT, // Your database port
   logging: false,
