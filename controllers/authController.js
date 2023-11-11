@@ -43,6 +43,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
 
 exports.login = catchAsync(async (req, res, next) => {
   // 1) check user and password exist in req.body
+  console.log('=================================')
   const { phoneNumber } = req.body;
   if (!phoneNumber) {
     throw new AppError('please provide your phoneNumber', 400);
@@ -57,8 +58,12 @@ exports.login = catchAsync(async (req, res, next) => {
     }
   });
 
+  console.log({user})
+
   if(!user) {
-    throw new AppError('user is not exist with this phoneNumber', 404)
+    // throw new AppError('user is not exist with this phoneNumber', 404)
+    console.log('-------------------------')
+    return res.redirect('/signup')
   }
 
   createSendToken(user, 200, res, 'you are logged in successfully!');

@@ -53,9 +53,17 @@ const handleJWTError = () =>
 const handleExpiredToken = () =>
   new AppError('The Token is expired, please login again!', 401);
 
-  const handleValidationError = (err) => {
-    throw new AppError(err.message, 400)
-  }
+const handleValidationError = (err) => {
+    return new AppError(err.message, 400)
+}
+
+const handleDublicateError = (err) => {
+  return new AppError(err.message, 409)
+}
+
+const handleInvalidDataTypeError = (err) => {
+  return new AppError(err.message, 400);
+}
 
 const sendErrorDev = (err, req, res) => {
   // WE ARE IN API
@@ -70,7 +78,11 @@ const sendErrorDev = (err, req, res) => {
     //WE ARE IN RENDERED WEBSITE
     res.status(err.statusCode).render('error', {
       title: 'Error',
-      msg: err.message,
+      message: err.message,
+      error: {
+        status: err.status,
+        stack: err.stack
+      }
     });
   }
   console.log('Error: ', err);
@@ -132,9 +144,9 @@ module.exports = (err, req, res, next) => {
     Object.setPrototypeOf(error, Object.getPrototypeOf(err));
     error.message = err.message;
     // meaning of these if else statements is we wanna make error operational by ourself using AppError
-    if (err.name == 'SequelizeUniqueConstraintError') handleUniqueError();
-    else if (err.parent?.code == '22P02') handleFuckingError();
-    else if(err.name == 'SequelizeValidationError') handleValidationError();
+    if (err.name == 'SequelizeUniqueConstraintError') handleDublicateError();
+    else if (err.parent?.code == '22P02') handleInvalidDataTypeError();
+    else if(err.name == 'SequelizeValidationError') handleValidationError(error);
     // when jwt.verify() makes error, thats name is JsonWebTokenError, it's  related to verifying (not match signitures together, manipulated payload in Token)
     else if (err.name === 'JsonWebTokenError') error = handleJWTError();
     // when Token is Expired jwt.verify func throw an Error with name is TokenExpiredError
