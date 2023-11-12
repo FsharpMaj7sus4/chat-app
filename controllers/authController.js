@@ -25,9 +25,8 @@ const createSendToken = (user, statusCode, res, message) => {
   res.cookie("jwt", token, cookiesOptions)
 
   return res.render("chat", {
-    data: {
-      user,
-    },
+    user,
+    token,
   })
 }
 

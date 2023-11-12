@@ -44,54 +44,58 @@ io.on("connection", async socket => {
         401
       )
     }
+
     const roomsData = user.dataValues.Rooms
-    let roomIdList = roomsData.map(room => room.id)
-    socket.join(roomIdList)
 
-    const lastMessagesIdList = await Message.findAll({
-      where: {
-        RoomId: {
-          [Sequelize.Op.in]: roomIdList,
+    socket.on("allMyRooms", async () => {
+      let roomIdList = roomsData.map(room => room.id)
+      socket.join(roomIdList)
+
+      const lastMessagesIdList = await Message.findAll({
+        where: {
+          RoomId: {
+            [Sequelize.Op.in]: roomIdList,
+          },
         },
-      },
-      attributes: [sequelize.fn("max", sequelize.col("id"))],
-      group: ["RoomId"],
-      raw: true,
-    }).then(uncleanResult => {
-      return uncleanResult.map(lastMsgInARoom => lastMsgInARoom.max)
-    })
-    const lastMessages = await Message.findAll({
-      where: {
-        id: {
-          [Sequelize.Op.in]: lastMessagesIdList,
+        attributes: [sequelize.fn("max", sequelize.col("id"))],
+        group: ["RoomId"],
+        raw: true,
+      }).then(uncleanResult => {
+        return uncleanResult.map(lastMsgInARoom => lastMsgInARoom.max)
+      })
+      const lastMessages = await Message.findAll({
+        where: {
+          id: {
+            [Sequelize.Op.in]: lastMessagesIdList,
+          },
         },
-      },
-      raw: true,
-    })
+        raw: true,
+      })
 
-    const unreadCountList = await Message.count({
-      where: {
-        RoomId: {
-          [Sequelize.Op.in]: roomIdList,
+      const unreadCountList = await Message.count({
+        where: {
+          RoomId: {
+            [Sequelize.Op.in]: roomIdList,
+          },
         },
-      },
-      group: ["RoomId"],
-      attributes: [
-        "RoomId",
-        [Sequelize.fn("COUNT", "RoomId"), "count"],
-      ],
-      raw: true,
-    })
+        group: ["RoomId"],
+        attributes: [
+          "RoomId",
+          [Sequelize.fn("COUNT", "RoomId"), "count"],
+        ],
+        raw: true,
+      })
 
-    const chatList = unreadCountList.map(room => {
-      room.lastMessage = lastMessages.find(
-        msg => msg.RoomId === room.RoomId
-      )
-      delete room.lastMessage.RoomId
-      return room
-    })
+      const chatList = unreadCountList.map(room => {
+        room.lastMessage = lastMessages.find(
+          msg => msg.RoomId === room.RoomId
+        )
+        delete room.lastMessage.RoomId
+        return room
+      })
 
-    socket.emit("allMyRooms", { chatList })
+      socket.emit("allMyRooms", chatList)
+    })
 
     socket.on("allMsgsBelongingToThisRoom", roomId => {})
 
