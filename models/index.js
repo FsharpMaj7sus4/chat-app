@@ -1,6 +1,7 @@
 const Sequelize = require("sequelize")
 const defineUser = require("./User")
 const defineRoom = require("./Room")
+const defineMessage = require('./Message')
 
 const { DB_DB, DB_USER, DB_PASSWORD, DB_PORT, DB_HOST, DB_DIALECT } =
   process.env
@@ -16,6 +17,7 @@ const db = {}
 
 db.User = defineUser(Sequelize, sequelize)
 db.Room = defineRoom(Sequelize, sequelize)
+db.Message = defineMessage(Sequelize, sequelize)
 
 db.Room.belongsToMany(db.User, {
   through: "UserRoom",
@@ -24,6 +26,22 @@ db.Room.belongsToMany(db.User, {
 db.User.belongsToMany(db.Room, {
   through: "UserRoom",
 })
+
+db.User.hasMany(db.Message, {
+  foreignKey: {
+    name: 'senderId'
+  }
+})
+
+db.Message.belongsTo(db.User, {
+  foreignKey: {
+    name: 'senderId'
+  }
+});
+
+db.Room.hasMany(db.Message);
+
+db.Message.belongsTo(db.Room);
 
 db.Sequelize = Sequelize
 db.sequelize = sequelize

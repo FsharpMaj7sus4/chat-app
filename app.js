@@ -50,7 +50,7 @@ db.sequelize
   .then(() => {
     console.log("database is connected successfully!")
     db.sequelize
-      .sync()
+      .sync({ alter: true })
       .then(async () => {
         await db.Room.findOrCreate({
           where: { name: "global" },
