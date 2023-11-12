@@ -32,9 +32,10 @@ const createSendToken = (user, statusCode, res, message) => {
 }
 
 exports.signUp = catchAsync(async (req, res, next) => {
+  const { name, phoneNumber } = req.body
   const newUser = await User.create({
-    name: req.body.name,
-    phoneNumber: req.body.phoneNumber,
+    name,
+    phoneNumber,
   })
   const globalRoom = await Room.findOne({
     where: {
@@ -49,6 +50,23 @@ exports.signUp = catchAsync(async (req, res, next) => {
     res,
     "you are signed up successfully!"
   )
+})
+
+exports.signupAPI = catchAsync(async (req, res, next) => {
+  const { name, phoneNumber } = req.body
+  const newUser = await User.create({
+    name,
+    phoneNumber,
+  })
+  const globalRoom = await Room.findOne({
+    where: {
+      name: "global",
+    },
+  })
+  await newUser.addRoom(globalRoom)
+
+  const token = signToken(newUser.id)
+  return res.status(200).json({ token })
 })
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -76,6 +94,33 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   createSendToken(user, 200, res, "you are logged in successfully!")
+})
+
+exports.loginAPI = catchAsync(async (req, res, next) => {
+  // 1) check if user and password exists in req.body
+  let { phoneNumber } = req.body
+  if (!phoneNumber) {
+    throw new AppError("please provide your phoneNumber", 400)
+  }
+
+  phoneNumber = String(phoneNumber)
+
+  // 2) if user exists && password is correct
+  const user = await User.findOne({
+    where: {
+      phoneNumber,
+    },
+  })
+
+  if (!user) {
+    // throw new AppError('no user exists with this phoneNumber', 404)
+    return res
+      .status(404)
+      .json({ message: "no user exists with this phoneNumber" })
+  }
+
+  const token = signToken(user.id)
+  return res.status(200).json({ token })
 })
 
 exports.protect = catchAsync(async (req, res, next) => {
