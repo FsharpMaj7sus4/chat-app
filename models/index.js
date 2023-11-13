@@ -3,10 +3,10 @@ const defineUser = require("./User")
 const defineRoom = require("./Room")
 const defineMessage = require('./Message')
 
-const { DB_DB, DB_USER, DB_PASSWORD, DB_PORT, DB_HOST, DB_DIALECT } =
+const { DB_DB, DB_USERNAME, DB_PASSWORD, DB_PORT, DB_HOST, DB_DIALECT } =
   process.env
 
-const sequelize = new Sequelize(DB_DB, DB_USER, DB_PASSWORD, {
+const sequelize = new Sequelize(DB_DB, DB_USERNAME, DB_PASSWORD, {
   port: DB_PORT, // Your database port
   logging: false,
   host: DB_HOST,
