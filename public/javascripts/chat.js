@@ -2,7 +2,6 @@ socket.emit("allMyRooms")
 
 socket.on("allMyRooms", chatList => {
   for (let room of chatList) {
-    console.log(room)
     let item = `
     <li class="text-end p-2 w-100 border-bottom">   
       <a
@@ -17,12 +16,12 @@ socket.on("allMyRooms", chatList => {
           <div class="user-status-div"></div>
         </div>
         <div class="user-msg mx-3">
-          <div class="user-name">${room.RoomId}</div>
+          <div class="user-name">${room.name}</div>
           <div class="user-message text-secondary">
-            ${room.lastMessage.text}
+            ${room.lastMessage.text ? room.lastMessage.text : "هنوز پیامی نیست"}
           </div>
           <small class="msg-time-passed text-secondary"
-            >${room.lastMessage.createdAt}</small
+            >${room.lastMessage.createdAt ? room.lastMessage.createdAt : ''}</small
           >
         </div>
       </a>

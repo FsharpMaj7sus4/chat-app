@@ -12,44 +12,51 @@ const AppError = require("../utils/AppError")
 
 let connectedUsers = {}
 
-io.on("connection", async socket => {
+const whoIs = async (socket) => {
+  const { jwt_token } = socket.handshake.query
+  let decodeToken
   try {
-    const { jwt_token } = socket.handshake.query
-
-    const decodeToken = await promisify(jwt.verify)(
+    decodeToken = await promisify(jwt.verify)(
       jwt_token,
       process.env.JWT_SECRET
     )
-    const userId = decodeToken.id
-    if (!connectedUsers[userId]) {
-      connectedUsers[userId] = socket.id
-    }
+  } catch (err) {
+    console.log(err)
+    return socket.emit('logout')
+  }
 
-    let user = await User.findOne({
-      where: {
-        id: userId,
-      },
-      include: {
-        model: Room,
-        attributes: ["name", "id"],
-        through: {
-          attributes: [],
-        },
-      },
-    })
+  const userId = decodeToken.id
+  if (!connectedUsers[userId]) {
+    connectedUsers[userId] = socket.id
+  }
 
-    if (!user) {
-      throw new AppError(
-        "The user belonging to this token does no longer exist!",
-        401
-      )
-    }
+  let user = await User.findOne({
+    where: {
+      id: userId,
+    },
+    include: {
+      model: Room,
+      attributes: ["name", "id"],
+      through: {
+        attributes: [],
+      }
+    },
+  })
+  if (!user) {
+    console.log(`userId in JWT token was not valid!! userId: ${userId}`)
+    return socket.emit('logout')
+  }
 
-    const roomsData = user.dataValues.Rooms
+  return user
+}
+
+io.on("connection", async socket => {
+  try {
+    const user = await whoIs(socket)
+    const roomsData = user.dataValues.Rooms.map(room => room.get({ plain: true }))
 
     socket.on("allMyRooms", async () => {
       let roomIdList = roomsData.map(room => room.id)
-      socket.join(roomIdList)
 
       const lastMessagesIdList = await Message.findAll({
         where: {
@@ -63,6 +70,9 @@ io.on("connection", async socket => {
       }).then(uncleanResult => {
         return uncleanResult.map(lastMsgInARoom => lastMsgInARoom.max)
       })
+
+      console.log('lastMessagesIdList: ', lastMessagesIdList)
+
       const lastMessages = await Message.findAll({
         where: {
           id: {
@@ -71,6 +81,8 @@ io.on("connection", async socket => {
         },
         raw: true,
       })
+
+      console.log('lastMessages: ', lastMessages)
 
       const unreadCountList = await Message.count({
         where: {
@@ -86,18 +98,32 @@ io.on("connection", async socket => {
         raw: true,
       })
 
-      const chatList = unreadCountList.map(room => {
+      console.log('unreadCountList', unreadCountList)
+
+      const chatList = roomsData.map(room => {
         room.lastMessage = lastMessages.find(
           msg => msg.RoomId === room.RoomId
-        )
-        delete room.lastMessage.RoomId
+        ) || {}
         return room
       })
 
       socket.emit("allMyRooms", chatList)
     })
 
-    socket.on("allMsgsBelongingToThisRoom", roomId => {})
+    socket.on("roomMessages", async roomId => {
+      const messages = await Message.findAll({
+        where: { RoomId: roomId },
+        order: [['createdAt', 'DESC']],
+        raw: true,
+        include: {
+          model: User,
+          as: 'senderId',
+          attributes: ['name']
+        }
+      })
+
+      socket.emit('roomMessages', messages)
+    })
 
     socket.on("newMessage", data => {
       socket.emit("newMessage", data)
