@@ -8,7 +8,6 @@ module.exports = (Sequelize, sequelize) => {
             type: Sequelize.STRING,
         },
     })
-  
+
     return Message
 }
-  

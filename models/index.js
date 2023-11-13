@@ -43,6 +43,12 @@ db.Room.hasMany(db.Message);
 
 db.Message.belongsTo(db.Room);
 
+db.Message.hasOne(db.Message, {
+  foreignKey: {
+    name: "repliedTo"
+  }
+})
+
 db.Sequelize = Sequelize
 db.sequelize = sequelize
 

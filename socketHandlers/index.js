@@ -71,8 +71,6 @@ io.on("connection", async socket => {
         return uncleanResult.map(lastMsgInARoom => lastMsgInARoom.max)
       })
 
-      console.log('lastMessagesIdList: ', lastMessagesIdList)
-
       const lastMessages = await Message.findAll({
         where: {
           id: {
@@ -81,8 +79,6 @@ io.on("connection", async socket => {
         },
         raw: true,
       })
-
-      console.log('lastMessages: ', lastMessages)
 
       const unreadCountList = await Message.count({
         where: {
@@ -97,8 +93,6 @@ io.on("connection", async socket => {
         ],
         raw: true,
       })
-
-      console.log('unreadCountList', unreadCountList)
 
       const chatList = roomsData.map(room => {
         room.lastMessage = lastMessages.find(
@@ -118,19 +112,29 @@ io.on("connection", async socket => {
         include: {
           model: User,
           as: 'senderId',
-          attributes: ['name']
+          attributes: ['name', 'id']
         }
       })
 
       socket.emit('roomMessages', messages)
     })
 
-    socket.on("newMessage", data => {
-      socket.emit("newMessage", data)
+    socket.on("newTextMessage", async data => {
+      const { roomId, text, repliedTo } = data
+      const messageInfo = Object.assign(
+        {},
+        { text },
+        { RoomId: roomId },
+        { senderId: user.id },
+        repliedTo ? { repliedTo } : null
+      )
+      const newMessage = await Message.create(messageInfo).then(message => message.get({ plain: true }))
+
+      io.sockets.in(roomId).emit("newTextMessage", newMessage)
     })
 
     socket.on("disconnect", () => {
-      delete connectedUsers[userId]
+      delete connectedUsers[user.id]
     })
   } catch (err) {
     console.log(err)
