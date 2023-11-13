@@ -24,10 +24,7 @@ const createSendToken = (user, statusCode, res, message) => {
   const token = signToken(user.id)
   res.cookie("jwt", token, cookiesOptions)
 
-  return res.render("chat", {
-    user,
-    token,
-  })
+  return res.redirect('/')
 }
 
 exports.signUp = catchAsync(async (req, res, next) => {
@@ -137,10 +134,11 @@ exports.protect = catchAsync(async (req, res, next) => {
     token = req.cookies.jwt
   }
   if (!token) {
-    throw new AppError(
-      "you are not logged in! please log in and try again.",
-      401
-    )
+    // throw new AppError(
+    //   "you are not logged in! please log in and try again.",
+    //   401
+    // )
+    res.redirect('/login')
   }
 
   // 2) verification token
