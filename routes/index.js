@@ -4,8 +4,11 @@ var router = express.Router()
 
 /* GET home page. */
 router.get("/", protect, function (req, res, next) {
+  const { id, name, phone } = req.user
   return res.render("chat", {
-    user: req.user,
+    userId: id,
+    userName: name,
+    userPhone: phone,
     token: req.cookies.jwt,
   })
 })

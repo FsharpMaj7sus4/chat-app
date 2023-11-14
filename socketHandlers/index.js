@@ -57,6 +57,7 @@ io.on("connection", async socket => {
 
     socket.on("allMyRooms", async () => {
       let roomIdList = roomsData.map(room => room.id)
+      await socket.join(roomIdList)
 
       const lastMessagesIdList = await Message.findAll({
         where: {
@@ -95,13 +96,15 @@ io.on("connection", async socket => {
       })
 
       const chatList = roomsData.map(room => {
-        room.lastMessage = lastMessages.find(
-          msg => msg.RoomId === room.RoomId
-        ) || {}
+        room.lastMessage = lastMessages.find(msg => msg.RoomId === room.id)
+        const unreadCount = unreadCountList.find(
+          msgCount => msgCount.RoomId === room.id
+        )
+        room.messageCount = unreadCount.count
         return room
       })
 
-      socket.emit("allMyRooms", chatList)
+      await socket.emit("allMyRooms", chatList)
     })
 
     socket.on("roomMessages", async roomId => {
@@ -111,7 +114,6 @@ io.on("connection", async socket => {
         raw: true,
         include: {
           model: User,
-          as: 'senderId',
           attributes: ['name', 'id']
         }
       })
@@ -129,8 +131,7 @@ io.on("connection", async socket => {
         repliedTo ? { repliedTo } : null
       )
       const newMessage = await Message.create(messageInfo).then(message => message.get({ plain: true }))
-
-      io.sockets.in(roomId).emit("newTextMessage", newMessage)
+      await io.to(Number(roomId)).emit("newTextMessage", newMessage)
     })
 
     socket.on("disconnect", () => {
