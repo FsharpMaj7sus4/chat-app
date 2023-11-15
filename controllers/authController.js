@@ -13,7 +13,7 @@ const createSendToken = (user, statusCode, res, message) => {
   const cookiesOptions = {
     expires: new Date(
       Date.now() +
-        process.env.JWT_COOKIES_EXPIRES_IN * 24 * 60 * 60 * 1000
+      process.env.JWT_COOKIES_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
   }
@@ -35,7 +35,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
   })
   const globalRoom = await Room.findOne({
     where: {
-      name: "global",
+      id: 1,
     },
   })
   await newUser.addRoom(globalRoom)
@@ -56,7 +56,7 @@ exports.signupAPI = catchAsync(async (req, res, next) => {
   })
   const globalRoom = await Room.findOne({
     where: {
-      name: "global",
+      id: 1,
     },
   })
   await newUser.addRoom(globalRoom)
