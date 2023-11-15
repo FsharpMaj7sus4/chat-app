@@ -94,6 +94,8 @@ body {
 .chats-list-link {
 	text-decoration: none;
 	color: #000;
+	width: 100% !important;
+	display: flex !important;
 }
 .chats-list-link:hover {
 	color: #000;

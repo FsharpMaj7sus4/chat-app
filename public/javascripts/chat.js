@@ -10,17 +10,27 @@ const editingMsgClose = document.querySelector("#editingMsgClose")
 const commentMsgClose = document.querySelector("#commentMsgClose")
 const commentedName = document.getElementById("commentedName")
 const inputSection = document.getElementById('inputSection')
-
+const msgListSection = document.getElementById('msgListSection')
+const chatListSection = document.getElementById('chatListSection')
 
 let state = {
   currentRoom: '0',
+  roomUsers: [],
   currentAction: 'none', // 'none', 'reply', 'edit'
+  userRooms: [],
   repliedTo: '0',
-  editing: '0'
+  editing: '0',
 }
 
 socket.on("allMyRooms", rooms => {
   for (let room of rooms) {
+    state.userRooms = rooms
+    const msgPreviewSender = (room.lastMessage['User.name']) ? room.lastMessage['User.name'] : ""
+    let msgPreview
+    if (!room.lastMessage.text && !room.lastMessage.file) msgPreview = "هنوز پیامی نیست"
+    else if (room.lastMessage.text && !room.lastMessage.file) msgPreview = room.lastMessage.text
+    else if (!room.lastMessage.text && room.lastMessage.file) msgPreview = room.lastMessage.file
+    else msgPreview = `(File) ${room.lastMessage.text}`
     let item = `
     <li  class="text-end p-2 w-100 border-bottom">   
       <a
@@ -30,20 +40,27 @@ socket.on("allMyRooms", rooms => {
         href="#"
       >
         <div class="user-img mx-">
-          <img
-            src="/images/user-img.webp"
-            alt=""
-          />
+          <img src="/images/user-img.webp" alt="" style="
+            width: 70px;
+          ">
           <div class="user-status-div"></div>
         </div>
-        <div class="user-msg mx-3">
+        <div class="user-msg mx-3" style='width: calc(100% - 100px);'>
           <div class="user-name">${room.name}</div>
           <div 
             class="user-message text-secondary"
             id="lastText-${room.id}"
+            style="
+              display: flex;
+              justify-content: center;
+            "
           >
-            ${room.lastMessage.text ? room.lastMessage.text : "هنوز پیامی نیست"}
-          </div>
+            <span>${msgPreviewSender}</span>: <span style="
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            ">${msgPreview}</span>
+            </div>
           <small 
             class="msg-time-passed text-secondary"
             id="lastDate-${room.id}"
@@ -58,219 +75,229 @@ socket.on("allMyRooms", rooms => {
   }
 })
 
+const generateOwnTextMsg = message => {
+  const { text, RoomId, repliedTo, createdAt } = message
+  const messageId = message.id
+  const item = `<div class="chat-transmiter-container">
+    <div class="chat-transmiter" id="chatTransmiter-${messageId}">
+      <div
+        class="d-flex justify-content-start align-items-center px-2 mb-1"
+      >
+        <img
+          class="rounded-circle me-2"
+          width="20px"
+          height="20px"
+          src="/images/user-img.webp"
+          alt=""
+        />
+        <small id="sender-${messageId}" class="text-secondary mx-2">شما</small>
+        <a
+          class="rounded-circle bg-success me-2 edit-user"
+          id="editBtn-${messageId}"
+          ><i class="bi bi-pencil d-flex text-white"></i
+        ></a>
+        <div
+          class="justify-content-start align-items-center editing-div animate__animated animate__bounceInRight"
+          id="editDiv-${messageId}"
+        >
+          <a
+            class="mx-1 text-decoration-none px-2 me-2 rounded-pill"
+            id="msgEdit-${messageId}"
+            href="#"
+            >ویرایش</a
+          >
+          <a
+            class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
+            id="msgComment-${messageId}"
+            href="#"
+            >پاسخ</a
+          >
+          <button
+            class="btn-close"
+            id="editClose-${messageId}"
+            style="font-size: 10px"
+          ></button>
+        </div>
+      </div>
+      <div
+        class="d-flex justify-content-start align-items-start flex-nowrap px-2 my-1"
+      >
+        <span><i class="bi bi-check-all d-flex fs-5"></i></span>
+        <p
+          class="message-text ms-2 mb-0"
+          id="yourMsg-${messageId}"
+        >
+          ${text}
+        </p>
+      </div>
+      <div
+        class="d-flex justify-content-start align-items-center px-2 mt-1"
+      >
+        <small class="dateTime-text text-secondary me-2">05/11</small>
+        <small class="dateTime-text text-secondary">06:13</small>
+      </div>
+    </div>
+    <div
+      class="commented-text p-1"
+      id="commented-${messageId}"
+    ></div>
+  </div>`
+
+  messageList.insertAdjacentHTML("beforeend", item)
+  msgListSection.scrollTo(0, messageList.scrollHeight)
+
+  const commented = document.querySelector(`#commented-${messageId}`)
+  const msgComment = document.querySelector(`#msgComment-${messageId}`)
+  const msgEdit = document.querySelector(`#msgEdit-${messageId}`)
+  const editDiv = document.querySelector(`#editDiv-${messageId}`)
+  const editBtn = document.querySelector(`#editBtn-${messageId}`)
+  const editClose = document.querySelector(`#editClose-${messageId}`)
+  const chatTransmiter = document.querySelector(`#chatTransmiter-${messageId}`)
+  const yourMsg = document.querySelector(`#yourMsg-${messageId}`)
+  const senderName = document.getElementById(`sender-${messageId}`)
+
+  msgComment.onclick = () => {
+    if ((commentMsg.style.display = "none")) {
+      commentMsg.style.display = "flex"
+    }
+    if ((editingMsg.style.display = "flex")) {
+      editingMsg.style.display = "none"
+      state.editing = '0'
+      input.value = ''
+    }
+    cmntText.value = yourMsg.innerHTML.trim()
+    commentedName.innerHTML = `${senderName.innerHTML}:`
+    state.currentAction = 'reply'
+    state.repliedTo = messageId.toString()
+  }
+
+  msgEdit.onclick = () => {
+    if ((editingMsg.style.display = "none")) {
+      editingMsg.style.display = "flex"
+    }
+    if ((commentMsg.style.display = "flex")) {
+      commentMsg.style.display = "none"
+      state.repliedTo = '0'
+    }
+    editText.value = yourMsg.innerHTML.trim()
+    input.value = yourMsg.innerHTML.trim()
+    state.currentAction = 'edit'
+    state.editing = messageId.toString()
+  }
+
+  editBtn.onclick = () => {
+    if ((editDiv.style.display = "none")) {
+      editDiv.style.display = "flex"
+    }
+    chatTransmiter.style.maxWidth = "100%"
+  }
+
+  editClose.onclick = () => {
+    if ((editDiv.style.display = "flex")) editDiv.style.display = "none"
+    chatTransmiter.style.maxWidth = "90%"
+  }
+}
+
+const generateOthersTextMsg = message => {
+  const { text, RoomId, senderId, repliedTo, createdAt, User } = message
+  const messageId = message.id
+  const item = `<div class="chat-reciever-container">
+    <div class="chat-reciever" id="chatReciever-${messageId}">
+      <div class="d-flex justify-content-end align-items-center mb-1">
+        <a
+          class="rounded-circle bg-success me-2 edit-user"
+          id="editBtn-${messageId}"
+          ><i class="bi bi-pencil d-flex text-white"></i
+        ></a>
+        <div
+          class="justify-content-start align-items-center editing-div animate__animated animate__bounceInLeft"
+          id="editDiv-${messageId}"
+        >
+        <a
+          class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
+          id="msgComment-${messageId}"
+          href="#"
+          >پاسخ</a
+        >
+          <button
+            class="btn-close"
+            id="editClose-${messageId}"
+            style="font-size: 10px"
+          ></button>
+        </div>  
+        <a
+          id="sender-${messageId}"
+          href="#"
+          class="text-secondary reciever-name text-decoration-none mx-2"
+          >${User.name}</a
+        >
+        <img
+          class="rounded-circle"
+          width="20px"
+          height="20px"
+          src="/images/user-img.webp"
+          alt=""
+        />
+      </div>
+      <div
+        class="d-flex justify-content-start align-items-center px-2 my-1"
+      >
+        <p class="message-text ms-2 mb-0">${text}</p>
+      </div>
+      <div
+        class="d-flex justify-content-end align-items-center px-2 mt-1"
+      >
+        <small class="dateTime-text text-secondary">05/11</small>
+        <small class="dateTime-text text-secondary ms-2">06:13</small>
+      </div>
+    </div>
+  </div>`
+
+  messageList.insertAdjacentHTML("beforeend", item)
+  msgListSection.scrollTo(0, messageList.scrollHeight)
+
+  const commented = document.querySelector(`#commented-${messageId}`)
+  const msgComment = document.querySelector(`#msgComment-${messageId}`)
+  const editDiv = document.querySelector(`#editDiv-${messageId}`)
+  const editClose = document.querySelector(`#editClose-${messageId}`)
+  const chatReciever = document.querySelector(`#chatReciever-${messageId}`)
+  const editBtn = document.querySelector(`#editBtn-${messageId}`)
+  const senderName = document.getElementById(`sender-${messageId}`)
+
+  msgComment.onclick = () => {
+    if ((commentMsg.style.display = "none")) {
+      commentMsg.style.display = "flex"
+    }
+    if ((editingMsg.style.display = "flex")) {
+      editingMsg.style.display = "none"
+      state.editing = '0'
+      input.value = ''
+    }
+    state.currentAction = 'reply'
+    state.repliedTo = messageId.toString()
+    commentedName.innerHTML = senderName.innerHTML
+
+  }
+
+  editBtn.onclick = () => {
+    if ((editDiv.style.display = "none")) {
+      editDiv.style.display = "flex"
+    }
+    chatReciever.style.maxWidth = "100%"
+  }
+
+  editClose.onclick = () => {
+    if ((editDiv.style.display = "flex")) editDiv.style.display = "none"
+    chatReciever.style.maxWidth = "90%"
+  }
+}
+
+
 socket.on('newTextMessage', message => {
   const { text, RoomId, senderId, repliedTo, createdAt } = message
-  const messageId = message.id
   if (state.currentRoom === RoomId) {
-    let item
-    if (senderId.toString() === userId) {
-      item = `<div class="chat-transmiter-container">
-        <div class="chat-transmiter" id="chatTransmiter-${messageId}">
-          <div
-            class="d-flex justify-content-start align-items-center px-2 mb-1"
-          >
-            <img
-              class="rounded-circle me-2"
-              width="20px"
-              height="20px"
-              src="/images/user-img.webp"
-              alt=""
-            />
-            <small id="sender-${messageId}" class="text-secondary mx-2">شما</small>
-            <a
-            class="rounded-circle bg-success me-2 edit-user"
-            id="editBtn-${messageId}"
-            ><i class="bi bi-pencil d-flex text-white"></i
-            ></a>
-            <div
-              class="justify-content-start align-items-center editing-div animate__animated animate__bounceInRight"
-              id="editDiv-${messageId}"
-            >
-              <a
-                class="mx-1 text-decoration-none px-2 me-2 rounded-pill"
-                id="msgEdit-${messageId}"
-                href="#"
-                >ویرایش</a
-              >
-              <a
-                class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
-                id="msgComment-${messageId}"
-                href="#"
-                >پاسخ</a
-              >
-              <button
-                class="btn-close"
-                id="editClose-${messageId}"
-                style="font-size: 10px"
-              ></button>
-            </div>
-          </div>
-          <div
-            class="d-flex justify-content-start align-items-start flex-nowrap px-2 my-1"
-          >
-            <span><i class="bi bi-check-all d-flex fs-5"></i></span>
-            <p
-              class="message-text ms-2 mb-0"
-              id="yourMsg-${messageId}"
-            >
-              ${text}
-            </p>
-          </div>
-          <div
-            class="d-flex justify-content-start align-items-center px-2 mt-1"
-          >
-            <small class="dateTime-text text-secondary me-2">05/11</small>
-            <small class="dateTime-text text-secondary">06:13</small>
-          </div>
-        </div>
-        <div
-          class="commented-text p-1"
-          id="commented-${messageId}"
-        ></div>
-      </div>`
-
-      messageList.insertAdjacentHTML("beforeend", item)
-      messageList.scrollTop = messageList.scrollHeight
-
-      const commented = document.querySelector(`#commented-${messageId}`)
-      const msgComment = document.querySelector(`#msgComment-${messageId}`)
-      const msgEdit = document.querySelector(`#msgEdit-${messageId}`)
-      const editDiv = document.querySelector(`#editDiv-${messageId}`)
-      const editBtn = document.querySelector(`#editBtn-${messageId}`)
-      const editClose = document.querySelector(`#editClose-${messageId}`)
-      const chatTransmiter = document.querySelector(`#chatTransmiter-${messageId}`)
-      const yourMsg = document.querySelector(`#yourMsg-${messageId}`)
-      const senderName = document.getElementById(`sender-${messageId}`)
-
-      msgComment.onclick = () => {
-        if ((commentMsg.style.display = "none")) {
-          commentMsg.style.display = "flex"
-        }
-        if ((editingMsg.style.display = "flex")) {
-          editingMsg.style.display = "none"
-          state.editing = '0'
-        }
-        cmntText.value = yourMsg.innerHTML.trim()
-        commentedName.innerHTML = `${senderName.innerHTML}:`
-        state.currentAction = 'reply'
-        state.repliedTo = messageId.toString()
-      }
-
-      msgEdit.onclick = () => {
-        if ((editingMsg.style.display = "none")) {
-          editingMsg.style.display = "flex"
-        }
-        if ((commentMsg.style.display = "flex")) {
-          commentMsg.style.display = "none"
-          state.repliedTo = '0'
-        }
-        editText.value = yourMsg.innerHTML.trim()
-        input.value = yourMsg.innerHTML.trim()
-        state.currentAction = 'edit'
-        state.editing = messageId.toString()
-      }
-
-      editBtn.onclick = () => {
-        if ((editDiv.style.display = "none")) {
-          editDiv.style.display = "flex"
-        }
-        chatTransmiter.style.maxWidth = "100%"
-      }
-
-      editClose.onclick = () => {
-        if ((editDiv.style.display = "flex")) editDiv.style.display = "none"
-        chatTransmiter.style.maxWidth = "90%"
-      }
-    } else {
-      item = `<div class="chat-reciever-container">
-        <div class="chat-reciever" id="chatReciever-${messageId}">
-          <div class="d-flex justify-content-end align-items-center mb-1">
-            <a
-              class="rounded-circle bg-success me-2 edit-user"
-              id="editBtn-${messageId}"
-              ><i class="bi bi-pencil d-flex text-white"></i
-            ></a>
-            <div
-              class="justify-content-start align-items-center editing-div animate__animated animate__bounceInLeft"
-              id="editDiv-${messageId}"
-            >
-            <a
-                class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
-                id="msgComment-${messageId}"
-                href="#"
-                >پاسخ</a
-            >
-              <button
-                  class="btn-close"
-                  id="editClose-${messageId}"
-                  style="font-size: 10px"
-              ></button>
-            </div>  
-            <a
-              id="sender-${messageId}"
-              href="#"
-              class="text-secondary reciever-name text-decoration-none mx-2"
-              >User ${senderId}</a
-            >
-            <img
-              class="rounded-circle"
-              width="20px"
-              height="20px"
-              src="/images/user-img.webp"
-              alt=""
-            />
-          </div>
-          <div
-            class="d-flex justify-content-start align-items-center px-2 my-1"
-          >
-            <p class="message-text ms-2 mb-0">${text}</p>
-          </div>
-          <div
-            class="d-flex justify-content-end align-items-center px-2 mt-1"
-          >
-            <small class="dateTime-text text-secondary">05/11</small>
-            <small class="dateTime-text text-secondary ms-2">06:13</small>
-          </div>
-        </div>
-      </div>`
-
-      messageList.insertAdjacentHTML("beforeend", item)
-      messageList.scrollTop = messageList.scrollHeight
-
-      const commented = document.querySelector(`#commented-${messageId}`)
-      const msgComment = document.querySelector(`#msgComment-${messageId}`)
-      const editDiv = document.querySelector(`#editDiv-${messageId}`)
-      const editClose = document.querySelector(`#editClose-${messageId}`)
-      const chatReciever = document.querySelector(`#chatReciever-${messageId}`)
-      const editBtn = document.querySelector(`#editBtn-${messageId}`)
-      const senderName = document.getElementById(`sender-${messageId}`)
-
-      msgComment.onclick = () => {
-        if ((commentMsg.style.display = "none")) {
-          commentMsg.style.display = "flex"
-        }
-        if ((editingMsg.style.display = "flex")) {
-          editingMsg.style.display = "none"
-          state.editing = '0'
-        }
-        state.currentAction = 'reply'
-        state.repliedTo = messageId.toString()
-        commentedName.innerHTML = senderName.innerHTML
-
-      }
-
-      editBtn.onclick = () => {
-        if ((editDiv.style.display = "none")) {
-          editDiv.style.display = "flex"
-        }
-        chatReciever.style.maxWidth = "100%"
-      }
-
-      editClose.onclick = () => {
-        if ((editDiv.style.display = "flex")) editDiv.style.display = "none"
-        chatReciever.style.maxWidth = "90%"
-      }
-    }
+    if (senderId.toString() === userId) generateOwnTextMsg(message)
+    else generateOthersTextMsg(message)
   }
   document.getElementById(`lastText-${RoomId}`).innerHTML = text
   document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
@@ -340,31 +367,27 @@ commentMsgClose.onclick = () => {
 //   state.repliedTo = '0'
 // }
 
-const selectChat = roomId => {
-  socket.emit('roomMessages', roomId)
+const selectChat = async roomId => {
   if (state.currentRoom === '0') inputSection.classList.remove('d-none')
   state.currentRoom = roomId
   messageList.innerHTML = ''
+  await socket.emit('roomData', roomId)
 }
 
-socket.on('roomMessages', messages => {
-  for (let message of messages.reverse()) {
-    let item
-    if (message.senderId === userId) {
-      item = ''
-    } else {
-      item = ''
-    }
-    messageList.insertAdjacentHTML("beforeend", item)
+socket.on('roomData', data => {
+  const { Messages, Users } = data
+  console.log(data)
+  state.roomUsers = Users
+  for (let message of Messages) {
+    if (message.senderId.toString() === userId) generateOwnTextMsg(message)
+    else generateOthersTextMsg(message)
   }
-  messageList.scrollTop = messageList.scrollHeight
-  return true
+  msgListSection.scrollTo(0, messageList.scrollHeight)
 })
 
 
 
 //=========================================================
-const chatReciever = document.querySelector(".chatReciever")
 const microphoneBtn = document.querySelector("#microphoneBtn")
 // const userEditedMsg = document.querySelector('#userEditedMsg')
 

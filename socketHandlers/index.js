@@ -22,7 +22,7 @@ const whoIs = async (socket) => {
     )
   } catch (err) {
     console.log(err)
-    return socket.emit('logout')
+    return await socket.emit('logout')
   }
 
   const userId = decodeToken.id
@@ -44,7 +44,7 @@ const whoIs = async (socket) => {
   })
   if (!user) {
     console.log(`userId in JWT token was not valid!! userId: ${userId}`)
-    return socket.emit('logout')
+    return await socket.emit('logout')
   }
 
   return user
@@ -79,6 +79,11 @@ io.on("connection", async socket => {
           },
         },
         raw: true,
+        include: [{
+          model: User,
+          attributes: ['name'],
+          nested: true
+        }]
       })
 
       const unreadCountList = await Message.count({
@@ -107,18 +112,29 @@ io.on("connection", async socket => {
       await socket.emit("allMyRooms", chatList)
     })
 
-    socket.on("roomMessages", async roomId => {
-      const messages = await Message.findAll({
-        where: { RoomId: roomId },
-        order: [['createdAt', 'DESC']],
-        raw: true,
-        include: {
-          model: User,
-          attributes: ['name', 'id']
-        }
+    socket.on("roomData", async roomId => {
+      const room = await Room.findOne({
+        where: { id: roomId },
+        include: [
+          {
+            model: User,
+            through: {
+              attributes: [],
+            },
+            attributes: ['id', 'name']
+          },
+          {
+            model: Message,
+            order: [['createdAt', 'DESC']],
+            include: {
+              model: User,
+              attributes: ['name']
+            }
+          }
+        ]
       })
 
-      socket.emit('roomMessages', messages)
+      await socket.emit('roomData', room)
     })
 
     socket.on("newTextMessage", async data => {
@@ -130,7 +146,18 @@ io.on("connection", async socket => {
         { senderId: user.id },
         repliedTo ? { repliedTo } : null
       )
-      const newMessage = await Message.create(messageInfo).then(message => message.get({ plain: true }))
+      const newMessage = await Message
+        .create(messageInfo, {
+          include: [
+            {
+              model: User,
+              through: {
+                attributes: [],
+              },
+              attributes: ['id', 'name']
+            }]
+        })
+        .then(message => message.get({ plain: true }))
       await io.to(Number(roomId)).emit("newTextMessage", newMessage)
     })
 
