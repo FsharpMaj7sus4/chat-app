@@ -14,13 +14,26 @@ const msgListSection = document.getElementById('msgListSection')
 const chatListSection = document.getElementById('chatListSection')
 
 let state = {
+  userRooms: [],
   currentRoom: '0',
+  allUsers: [],
   roomUsers: [],
   currentAction: 'none', // 'none', 'reply', 'edit'
-  userRooms: [],
   repliedTo: '0',
   editing: '0',
 }
+
+socket.on('allUsers', users => {
+  state.allUsers = users
+})
+
+socket.on('newUser', user => {
+  state.allUsers.push(user)
+})
+
+socket.on('newUserInRoom', user => {
+  state.roomUsers.push(user)
+})
 
 socket.on("allMyRooms", rooms => {
   for (let room of rooms) {

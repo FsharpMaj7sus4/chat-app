@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken")
 const { User, Room } = require("../models")
 const catchAsync = require("../utils/catchAsync")
 const AppError = require("../utils/AppError")
+const io = require('../socketHandlers')
 
 const signToken = id =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -39,6 +40,9 @@ exports.signUp = catchAsync(async (req, res, next) => {
     },
   })
   await newUser.addRoom(globalRoom)
+  const newUserRaw = await newUser.get({ plain: true })
+  io.emit("newUser", newUserRaw)
+  io.to(1).emit('newUserInRoom', newUserRaw)
 
   createSendToken(
     newUser,

@@ -114,6 +114,8 @@ io.on("connection", async socket => {
     socket.on('allMyRooms', async () => {
       const chatList = await makeChatListAndJoin(socket, roomsData)
       socket.emit("allMyRooms", chatList)
+      const allUsers = await User.findAll({ raw: true })
+      socket.emit('allUsers', allUsers)
     })
 
     socket.on("roomData", async roomId => {
@@ -125,7 +127,7 @@ io.on("connection", async socket => {
             through: {
               attributes: [],
             },
-            attributes: ['id', 'name']
+            raw: true
           },
           {
             model: Message,
@@ -133,10 +135,10 @@ io.on("connection", async socket => {
             include: {
               model: User,
               attributes: ['name']
-            }
+            },
+            raw: true
           }
-        ],
-        raw: true
+        ]
       })
 
       socket.emit('roomData', room)
@@ -163,7 +165,7 @@ io.on("connection", async socket => {
             }]
         })
         .then(message => message.get({ plain: true }))
-      await io.to(Number(roomId)).emit("newTextMessage", newMessage)
+      io.to(Number(roomId)).emit("newTextMessage", newMessage)
     })
 
     socket.on('editMessage', async data => {
@@ -173,7 +175,7 @@ io.on("connection", async socket => {
         plain: true
       })
       const message = result[1].dataValues
-      await io.to(message.RoomId).emit("editMessage", message)
+      io.to(message.RoomId).emit("editMessage", message)
     })
 
     socket.on("disconnect", () => {
