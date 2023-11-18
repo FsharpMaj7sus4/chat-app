@@ -7,6 +7,10 @@ module.exports = (Sequelize, sequelize) => {
         file: {
             type: Sequelize.STRING,
         },
+        isSeen: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: false
+        }
     })
 
     return Message

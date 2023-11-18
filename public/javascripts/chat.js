@@ -101,7 +101,7 @@ socket.on("allMyRooms", rooms => {
 })
 
 const generateOwnTextMsg = message => {
-  const { text, RoomId, repliedTo, createdAt } = message
+  const { text, RoomId, repliedTo, createdAt, isSeen } = message
   let commentedDisplay = ''
   let commentedText = ''
   const messageId = message.id
@@ -159,7 +159,7 @@ const generateOwnTextMsg = message => {
       <div
         class="d-flex justify-content-start align-items-start flex-nowrap px-2 my-1"
       >
-        <span><i class="bi bi-check-all d-flex fs-5"></i></span>
+        <span><i class="bi ${isSeen ? "bi-check-all" : "bi-check"} d-flex fs-5"></i></span>
         <p
           class="message-text ms-2 mb-0"
           id="yourMsg-${messageId}"
@@ -234,6 +234,7 @@ const generateOwnTextMsg = message => {
 
 const generateOthersTextMsg = message => {
   const { text, RoomId, senderId, repliedTo, createdAt, User } = message
+  console.log(message)
   const messageId = message.id
   let commentedDisplay = ''
   let commentedText = ''
@@ -342,7 +343,10 @@ socket.on('newTextMessage', message => {
   const { text, RoomId, senderId, repliedTo, createdAt } = message
   if (state.currentRoom === RoomId) {
     if (senderId.toString() === userId) generateOwnTextMsg(message)
-    else generateOthersTextMsg(message)
+    else {
+      generateOthersTextMsg(message)
+      socket.emit('seen', currentRoom)
+    }
   }
   document.getElementById(`lastText-${RoomId}`).innerHTML = text
   document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
@@ -412,12 +416,19 @@ socket.on('roomData', data => {
     else generateOthersTextMsg(message)
   }
   msgListSection.scrollTo(0, messageList.scrollHeight)
+  socket.emit('seen', state.currentRoom)
 })
 
 socket.on('editMessage', editedMsg => {
   document.querySelector(`#yourMsg-${editedMsg.id}`).innerHTML = editedMsg.text
 })
 
+socket.on('seen', () => {
+  const unseens = document.querySelectorAll('.bi-check')
+  for (unseenMsg of unseens) {
+    unseenMsg.classList.replace("bi-check", "bi-check-all")
+  }
+})
 
 // commentSubmit.onclick = () => {
 //   const { repliedTo } = state
