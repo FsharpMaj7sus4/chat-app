@@ -100,7 +100,7 @@ const makeChatListAndJoin = async (socket, roomsData) => {
     const unreadCount = unreadCountList.find(
       msgCount => msgCount.RoomId === room.id
     )
-    room.messageCount = unreadCount.count
+    room.messageCount = unreadCount ? unreadCount.count : 0
     return room
   })
 

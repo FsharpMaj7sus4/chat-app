@@ -38,12 +38,20 @@ socket.on('newUserInRoom', user => {
 socket.on("allMyRooms", rooms => {
   for (let room of rooms) {
     state.userRooms = rooms
-    const msgPreviewSender = (room.lastMessage['User.name']) ? room.lastMessage['User.name'] : ""
+    let msgPreviewSender
     let msgPreview
-    if (!room.lastMessage.text && !room.lastMessage.file) msgPreview = "هنوز پیامی نیست"
-    else if (room.lastMessage.text && !room.lastMessage.file) msgPreview = room.lastMessage.text
-    else if (!room.lastMessage.text && room.lastMessage.file) msgPreview = room.lastMessage.file
-    else msgPreview = `(File) ${room.lastMessage.text}`
+    let createdAt
+    if (!room.hasOwnProperty('lastMessage')) {
+      msgPreviewSender = ''
+      msgPreview = "هنوز پیامی نیست"
+      createdAt = ''
+    } else {
+      msgPreviewSender = room.lastMessage['User.name'] + ' :'
+      createdAt = room.lastMessage.createdAt
+      if (room.lastMessage.text && !room.lastMessage.file) msgPreview = room.lastMessage.text
+      else if (!room.lastMessage.text && room.lastMessage.file) msgPreview = room.lastMessage.file
+      else msgPreview = `(File) ${room.lastMessage.text}`
+    }
     let item = `
     <li  class="text-end p-2 w-100 border-bottom">   
       <a
@@ -68,7 +76,8 @@ socket.on("allMyRooms", rooms => {
               justify-content: center;
             "
           >
-            <span>${msgPreviewSender}</span>: <span style="
+            <span>${msgPreviewSender}</span>
+            <span style="
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
@@ -78,7 +87,7 @@ socket.on("allMyRooms", rooms => {
             class="msg-time-passed text-secondary"
             id="lastDate-${room.id}"
           >
-            ${room.lastMessage.createdAt ? room.lastMessage.createdAt : ''}
+            ${createdAt}
           </small>
         </div>
       </a>
