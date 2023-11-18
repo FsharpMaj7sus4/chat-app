@@ -102,8 +102,20 @@ socket.on("allMyRooms", rooms => {
 
 const generateOwnTextMsg = message => {
   const { text, RoomId, repliedTo, createdAt } = message
+  let commentedDisplay = ''
+  let commentedText = ''
   const messageId = message.id
+  if (repliedTo) {
+    commentedDisplay = "d-flex"
+    commentedText = repliedTo.text
+  }
   const item = `<div class="chat-transmiter-container">
+    <div
+      class="commented-text p-1 ${commentedDisplay}"
+      id="commented-${messageId}"
+    >
+    ${commentedText}
+    </div>
     <div class="chat-transmiter" id="chatTransmiter-${messageId}">
       <div
         class="d-flex justify-content-start align-items-center px-2 mb-1"
@@ -162,11 +174,8 @@ const generateOwnTextMsg = message => {
         <small class="dateTime-text text-secondary">06:13</small>
       </div>
     </div>
-    <div
-      class="commented-text p-1"
-      id="commented-${messageId}"
-    ></div>
   </div>`
+
 
   messageList.insertAdjacentHTML("beforeend", item)
   msgListSection.scrollTo(0, messageList.scrollHeight)
@@ -226,7 +235,19 @@ const generateOwnTextMsg = message => {
 const generateOthersTextMsg = message => {
   const { text, RoomId, senderId, repliedTo, createdAt, User } = message
   const messageId = message.id
+  let commentedDisplay = ''
+  let commentedText = ''
+  if (repliedTo) {
+    commentedDisplay = "d-flex"
+    commentedText = repliedTo.text
+  }
   const item = `<div class="chat-reciever-container">
+    <div
+      class="commented-text p-1 ${commentedDisplay}"
+      id="commented-${messageId}"
+    >
+    ${commentedText}
+    </div>
     <div class="chat-reciever" id="chatReciever-${messageId}">
       <div class="d-flex justify-content-end align-items-center mb-1">
         <a
@@ -336,7 +357,7 @@ sendButton.onclick = e => {
           {},
           { text: input.value },
           { roomId: state.currentRoom },
-          state.repliedTo !== '0' ? { repliedTo: state.repliedTo } : null
+          state.repliedTo !== '0' ? { repliedToId: state.repliedTo } : null
         )
         socket.emit('newTextMessage', newMessage)
         commentMsg.style.display = "none"
@@ -394,7 +415,6 @@ socket.on('roomData', data => {
 })
 
 socket.on('editMessage', editedMsg => {
-  console.log(editedMsg)
   document.querySelector(`#yourMsg-${editedMsg.id}`).innerHTML = editedMsg.text
 })
 

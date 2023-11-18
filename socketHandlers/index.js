@@ -132,10 +132,14 @@ io.on("connection", async socket => {
           {
             model: Message,
             order: [['createdAt', 'DESC']],
-            include: {
+            include: [{
               model: User,
               attributes: ['name']
             },
+            {
+              model: Message,
+              as: 'repliedTo'
+            }],
             raw: true
           }
         ]
@@ -145,13 +149,13 @@ io.on("connection", async socket => {
     })
 
     socket.on("newTextMessage", async data => {
-      const { roomId, text, repliedTo } = data
+      const { roomId, text, repliedToId } = data
       const messageInfo = Object.assign(
         {},
         { text },
         { RoomId: roomId },
         { senderId: user.id },
-        repliedTo ? { repliedTo } : null
+        repliedToId ? { repliedToId } : null
       )
       const newMessage = await Message
         .create(messageInfo, {
@@ -162,7 +166,12 @@ io.on("connection", async socket => {
                 attributes: [],
               },
               attributes: ['id', 'name']
-            }]
+            },
+            {
+              model: Message,
+              as: 'repliedTo'
+            }
+          ]
         })
         .then(message => message.get({ plain: true }))
       io.to(Number(roomId)).emit("newTextMessage", newMessage)
