@@ -174,9 +174,7 @@
 			const userId = "<%= userId %>"
 			const userName = "<%= userName %>"
 			const userPhone = "<%= userPhone %>"
-			;(async () => {
-				await socket.emit("allMyRooms")
-			})()
+			socket.emit("allMyRooms")
 		</script>
 		<script src="/javascripts/chat.js"></script>
 	</body>

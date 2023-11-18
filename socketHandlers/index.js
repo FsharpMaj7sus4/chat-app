@@ -22,7 +22,7 @@ const whoIs = async (socket) => {
     )
   } catch (err) {
     console.log(err)
-    return await socket.emit('logout')
+    return socket.emit('logout')
   }
 
   const userId = decodeToken.id
@@ -44,72 +44,76 @@ const whoIs = async (socket) => {
   })
   if (!user) {
     console.log(`userId in JWT token was not valid!! userId: ${userId}`)
-    return await socket.emit('logout')
+    return socket.emit('logout')
   }
 
   return user
+}
+
+const makeChatListAndJoin = async (socket, roomsData) => {
+  let roomIdList = roomsData.map(room => room.id)
+  await socket.join(roomIdList)
+
+  const lastMessagesIdList = await Message.findAll({
+    where: {
+      RoomId: {
+        [Sequelize.Op.in]: roomIdList,
+      },
+    },
+    attributes: [sequelize.fn("max", sequelize.col("id"))],
+    group: ["RoomId"],
+    raw: true,
+  }).then(uncleanResult => {
+    return uncleanResult.map(lastMsgInARoom => lastMsgInARoom.max)
+  })
+
+  const lastMessages = await Message.findAll({
+    where: {
+      id: {
+        [Sequelize.Op.in]: lastMessagesIdList,
+      },
+    },
+    raw: true,
+    include: [{
+      model: User,
+      attributes: ['name'],
+      nested: true
+    }]
+  })
+
+  const unreadCountList = await Message.count({
+    where: {
+      RoomId: {
+        [Sequelize.Op.in]: roomIdList,
+      },
+    },
+    group: ["RoomId"],
+    attributes: [
+      "RoomId",
+      [Sequelize.fn("COUNT", "RoomId"), "count"],
+    ],
+    raw: true,
+  })
+
+  const chatList = roomsData.map(room => {
+    room.lastMessage = lastMessages.find(msg => msg.RoomId === room.id)
+    const unreadCount = unreadCountList.find(
+      msgCount => msgCount.RoomId === room.id
+    )
+    room.messageCount = unreadCount.count
+    return room
+  })
+
+  return chatList
 }
 
 io.on("connection", async socket => {
   try {
     const user = await whoIs(socket)
     const roomsData = user.dataValues.Rooms.map(room => room.get({ plain: true }))
-
-    socket.on("allMyRooms", async () => {
-      let roomIdList = roomsData.map(room => room.id)
-      await socket.join(roomIdList)
-
-      const lastMessagesIdList = await Message.findAll({
-        where: {
-          RoomId: {
-            [Sequelize.Op.in]: roomIdList,
-          },
-        },
-        attributes: [sequelize.fn("max", sequelize.col("id"))],
-        group: ["RoomId"],
-        raw: true,
-      }).then(uncleanResult => {
-        return uncleanResult.map(lastMsgInARoom => lastMsgInARoom.max)
-      })
-
-      const lastMessages = await Message.findAll({
-        where: {
-          id: {
-            [Sequelize.Op.in]: lastMessagesIdList,
-          },
-        },
-        raw: true,
-        include: [{
-          model: User,
-          attributes: ['name'],
-          nested: true
-        }]
-      })
-
-      const unreadCountList = await Message.count({
-        where: {
-          RoomId: {
-            [Sequelize.Op.in]: roomIdList,
-          },
-        },
-        group: ["RoomId"],
-        attributes: [
-          "RoomId",
-          [Sequelize.fn("COUNT", "RoomId"), "count"],
-        ],
-        raw: true,
-      })
-
-      const chatList = roomsData.map(room => {
-        room.lastMessage = lastMessages.find(msg => msg.RoomId === room.id)
-        const unreadCount = unreadCountList.find(
-          msgCount => msgCount.RoomId === room.id
-        )
-        room.messageCount = unreadCount.count
-        return room
-      })
-
-      await socket.emit("allMyRooms", chatList)
+    socket.on('allMyRooms', async () => {
+      const chatList = await makeChatListAndJoin(socket, roomsData)
+      socket.emit("allMyRooms", chatList)
     })
 
     socket.on("roomData", async roomId => {
@@ -131,10 +135,11 @@ io.on("connection", async socket => {
               attributes: ['name']
             }
           }
-        ]
+        ],
+        raw: true
       })
 
-      await socket.emit('roomData', room)
+      socket.emit('roomData', room)
     })
 
     socket.on("newTextMessage", async data => {
@@ -159,6 +164,16 @@ io.on("connection", async socket => {
         })
         .then(message => message.get({ plain: true }))
       await io.to(Number(roomId)).emit("newTextMessage", newMessage)
+    })
+
+    socket.on('editMessage', async data => {
+      const result = await Message.update({ text: data.text }, {
+        where: { id: data.id },
+        returning: true,
+        plain: true
+      })
+      const message = result[1].dataValues
+      await io.to(message.RoomId).emit("editMessage", message)
     })
 
     socket.on("disconnect", () => {

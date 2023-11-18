@@ -292,7 +292,6 @@ const generateOthersTextMsg = message => {
   }
 }
 
-
 socket.on('newTextMessage', message => {
   const { text, RoomId, senderId, repliedTo, createdAt } = message
   if (state.currentRoom === RoomId) {
@@ -324,8 +323,6 @@ sendButton.onclick = e => {
           id: Number(state.editing),
           text: input.value
         })
-        const yourMsg = document.querySelector(`#yourMsg-${state.editing}`)
-        yourMsg.innerHTML = input.value
         editingMsg.style.display = "none"
         state.editing = '0'
         break
@@ -354,6 +351,28 @@ commentMsgClose.onclick = () => {
   state.repliedTo = '0'
 }
 
+const selectChat = async roomId => {
+  if (state.currentRoom === '0') inputSection.classList.remove('d-none')
+  state.currentRoom = roomId
+  messageList.innerHTML = ''
+  socket.emit('roomData', roomId)
+}
+
+socket.on('roomData', data => {
+  const { Messages, Users } = data
+  state.roomUsers = Users
+  for (let message of Messages) {
+    if (message.senderId.toString() === userId) generateOwnTextMsg(message)
+    else generateOthersTextMsg(message)
+  }
+  msgListSection.scrollTo(0, messageList.scrollHeight)
+})
+
+socket.on('editMessage', editedMsg => {
+  console.log(editedMsg)
+  document.querySelector(`#yourMsg-${editedMsg.id}`).innerHTML = editedMsg.text
+})
+
 
 // commentSubmit.onclick = () => {
 //   const { repliedTo } = state
@@ -366,25 +385,6 @@ commentMsgClose.onclick = () => {
 
 //   state.repliedTo = '0'
 // }
-
-const selectChat = async roomId => {
-  if (state.currentRoom === '0') inputSection.classList.remove('d-none')
-  state.currentRoom = roomId
-  messageList.innerHTML = ''
-  await socket.emit('roomData', roomId)
-}
-
-socket.on('roomData', data => {
-  const { Messages, Users } = data
-  console.log(data)
-  state.roomUsers = Users
-  for (let message of Messages) {
-    if (message.senderId.toString() === userId) generateOwnTextMsg(message)
-    else generateOthersTextMsg(message)
-  }
-  msgListSection.scrollTo(0, messageList.scrollHeight)
-})
-
 
 
 //=========================================================
