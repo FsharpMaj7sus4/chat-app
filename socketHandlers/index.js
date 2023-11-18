@@ -187,6 +187,10 @@ io.on("connection", async socket => {
       io.to(message.RoomId).emit("editMessage", message)
     })
 
+    socket.on('seen', async roomId => {
+      await Message.update({ isSeen: true }, { where: { RoomId: roomId } })
+      socket.to(roomId).emit('seen')
+    })
     socket.on("disconnect", () => {
       delete connectedUsers[user.id]
     })

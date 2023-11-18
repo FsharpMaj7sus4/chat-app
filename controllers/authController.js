@@ -136,15 +136,14 @@ exports.protect = catchAsync(async (req, res, next) => {
   ) {
     // req.headers.authorization.split(' ') => ['brearer', '<TOKEN>']
     token = req.headers.authorization.split(" ")[1]
-  } else if (req.cookies.jwt) {
+  } else if (req.cookies && req.cookies.jwt) {
     token = req.cookies.jwt
-  }
-  if (!token) {
+  } else {
+    return res.redirect('/login')
     // throw new AppError(
     //   "you are not logged in! please log in and try again.",
     //   401
     // )
-    res.redirect('/login')
   }
 
   // 2) verification token
@@ -161,7 +160,7 @@ exports.protect = catchAsync(async (req, res, next) => {
     //   401
     // )
     res.render('login', {
-      message: "user token in no longer valid"
+      message: "user auth token in not valid"
     })
   }
 
