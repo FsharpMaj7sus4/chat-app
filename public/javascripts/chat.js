@@ -67,7 +67,10 @@ socket.on("allMyRooms", rooms => {
           <div class="user-status-div"></div>
         </div>
         <div class="user-msg mx-3" style='width: calc(100% - 100px);'>
-          <div class="user-name">${room.name}</div>
+          <div class="user-name">
+            <span class="badge rounded-pill bg-primary">${room.messageCount ? room.messageCount : ''}</span>
+            ${room.name}
+          </div>
           <div 
             class="user-message text-secondary"
             id="lastText-${room.id}"
