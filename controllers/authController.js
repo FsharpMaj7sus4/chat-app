@@ -44,6 +44,8 @@ exports.signUp = catchAsync(async (req, res, next) => {
   io.emit("newUser", newUserRaw)
   io.to(1).emit('newUserInRoom', newUserRaw)
 
+  req.user = newUserRaw
+
   createSendToken(
     newUser,
     201,
@@ -154,10 +156,13 @@ exports.protect = catchAsync(async (req, res, next) => {
   // 3) check if user still exists
   const currentUser = await User.findByPk(decodeToken.id)
   if (!currentUser) {
-    throw new AppError(
-      "The user belonging to this token does no longer exist!",
-      401
-    )
+    // throw new AppError(
+    //   "The user belonging to this token does no longer exist!",
+    //   401
+    // )
+    res.render('login', {
+      message: "user token in no longer valid"
+    })
   }
 
   // if compiler reachs at this posit and no error has occured,
