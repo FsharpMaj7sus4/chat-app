@@ -43,7 +43,6 @@ const whoIs = async (socket) => {
     },
   })
   if (!user) {
-    console.log(`userId in JWT token was not valid!! userId: ${userId}`)
     return socket.emit('logout')
   }
 
@@ -76,6 +75,7 @@ const makeChatListAndJoin = async (socket, roomsData) => {
     raw: true,
     include: [{
       model: User,
+      as: 'sender',
       attributes: ['name'],
       nested: true
     }]
@@ -107,6 +107,18 @@ const makeChatListAndJoin = async (socket, roomsData) => {
   return chatList
 }
 
+const getRepliedMessage = async repliedToId => {
+  let repliedTo = await Message.findByPk(repliedToId, {
+    include: [{
+      model: User,
+      as: 'sender',
+      attributes: ['name']
+    }],
+    attributes: ['file', 'text'],
+  })
+  return repliedTo
+}
+
 io.on("connection", async socket => {
   try {
     const user = await whoIs(socket)
@@ -131,12 +143,29 @@ io.on("connection", async socket => {
           },
           {
             model: Message,
-            order: [['createdAt', 'DESC']],
-            include: [{
-              model: User,
-              as: 'sender',
-              attributes: ['name']
-            }],
+            include: [
+              {
+                model: User,
+                as: 'sender',
+                attributes: ['name']
+              },
+              {
+                model: Message,
+                as: 'repliedTo',
+                // where: {
+                //   id: {
+                //     [Sequelize.Op.ne]: null
+                //   }
+                // },
+                attributes: ['text', 'file'],
+                include: {
+                  model: User,
+                  as: 'sender',
+                  attributes: ['name']
+                },
+                raw: true
+              }
+            ],
             raw: true
           }
         ],
@@ -153,25 +182,15 @@ io.on("connection", async socket => {
         { text },
         { RoomId: roomId },
         { senderId: user.id },
-        repliedToId ? { repliedToId } : null
+        repliedToId ? { repliedToId } : {}
       )
-      const newMessage = await Message
-        .create(messageInfo, {
-          include: [
-            {
-              model: User,
-              through: {
-                attributes: [],
-              },
-              attributes: ['id', 'name']
-            },
-            {
-              model: Message,
-              as: 'repliedTo'
-            }
-          ]
-        })
-        .then(message => message.get({ plain: true }))
+      let newMessage = await Message.create(messageInfo)
+      newMessage = await newMessage.get({ plain: true })
+      if (repliedToId) {
+        newMessage.repliedTo = await getRepliedMessage(repliedToId)
+      }
+      newMessage.sender = { name: user.name }
+
       io.to(Number(roomId)).emit("newTextMessage", newMessage)
     })
 
@@ -182,6 +201,9 @@ io.on("connection", async socket => {
         plain: true
       })
       const message = result[1].dataValues
+      if (message.repliedToId) {
+        message.repliedTo = await getRepliedMessage(repliedToId)
+      }
       io.to(message.RoomId).emit("editMessage", message)
     })
 
@@ -189,6 +211,7 @@ io.on("connection", async socket => {
       await Message.update({ isSeen: true }, { where: { RoomId: roomId } })
       socket.to(roomId).emit('seen')
     })
+
     socket.on("disconnect", () => {
       delete connectedUsers[user.id]
     })

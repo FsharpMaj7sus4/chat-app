@@ -36,8 +36,8 @@ socket.on('newUserInRoom', user => {
 })
 
 socket.on("allMyRooms", rooms => {
+  state.userRooms = rooms
   for (let room of rooms) {
-    state.userRooms = rooms
     let msgPreviewSender
     let msgPreview
     let createdAt
@@ -46,7 +46,7 @@ socket.on("allMyRooms", rooms => {
       msgPreview = "هنوز پیامی نیست"
       createdAt = ''
     } else {
-      msgPreviewSender = room.lastMessage['User.name'] + ' :'
+      msgPreviewSender = room.lastMessage['sender.name'] + ' :'
       createdAt = room.lastMessage.createdAt
       if (room.lastMessage.text && !room.lastMessage.file) msgPreview = room.lastMessage.text
       else if (!room.lastMessage.text && room.lastMessage.file) msgPreview = room.lastMessage.file
@@ -102,19 +102,21 @@ socket.on("allMyRooms", rooms => {
 
 const generateOwnTextMsg = message => {
   const { text, RoomId, repliedTo, createdAt, isSeen } = message
+  const messageId = message.id
   let commentedDisplay = ''
   let commentedText = ''
-  const messageId = message.id
-  if (repliedTo) {
+  let commentedSender = ''
+  if (repliedTo.text !== null || repliedTo.file !== null) {
     commentedDisplay = "d-flex"
-    commentedText = repliedTo.text
+    commentedText = repliedTo.text ? repliedTo.text : repliedTo.file
+    commentedSender = repliedTo.sender.name
   }
   const item = `<div class="chat-transmiter-container">
     <div
       class="commented-text p-1 ${commentedDisplay}"
       id="commented-${messageId}"
     >
-    ${commentedText}
+    ${commentedSender}: ${commentedText}
     </div>
     <div class="chat-transmiter" id="chatTransmiter-${messageId}">
       <div
@@ -233,21 +235,22 @@ const generateOwnTextMsg = message => {
 }
 
 const generateOthersTextMsg = message => {
-  const { text, RoomId, senderId, repliedTo, createdAt, User } = message
-  console.log(message)
+  const { text, RoomId, senderId, repliedTo, createdAt, sender } = message
   const messageId = message.id
   let commentedDisplay = ''
   let commentedText = ''
-  if (repliedTo) {
+  let commentedSender = ''
+  if (repliedTo.text !== null || repliedTo.file !== null) {
     commentedDisplay = "d-flex"
-    commentedText = repliedTo.text
+    commentedText = repliedTo.text ? repliedTo.text : repliedTo.file
+    commentedSender = repliedTo.sender.name
   }
   const item = `<div class="chat-reciever-container">
     <div
       class="commented-text p-1 ${commentedDisplay}"
       id="commented-${messageId}"
     >
-    ${commentedText}
+    ${commentedSender}: ${commentedText}
     </div>
     <div class="chat-reciever" id="chatReciever-${messageId}">
       <div class="d-flex justify-content-end align-items-center mb-1">
@@ -276,7 +279,7 @@ const generateOthersTextMsg = message => {
           id="sender-${messageId}"
           href="#"
           class="text-secondary reciever-name text-decoration-none mx-2"
-          >${User.name}</a
+          >${sender.name}</a
         >
         <img
           class="rounded-circle"
@@ -289,7 +292,10 @@ const generateOthersTextMsg = message => {
       <div
         class="d-flex justify-content-start align-items-center px-2 my-1"
       >
-        <p class="message-text ms-2 mb-0">${text}</p>
+        <p
+          class="message-text ms-2 mb-0"
+          id="yourMsg-${messageId}"      
+        >${text}</p>
       </div>
       <div
         class="d-flex justify-content-end align-items-center px-2 mt-1"
@@ -309,7 +315,9 @@ const generateOthersTextMsg = message => {
   const editClose = document.querySelector(`#editClose-${messageId}`)
   const chatReciever = document.querySelector(`#chatReciever-${messageId}`)
   const editBtn = document.querySelector(`#editBtn-${messageId}`)
-  const senderName = document.getElementById(`sender-${messageId}`)
+  const yourMsg = document.querySelector(`#yourMsg-${messageId}`)
+
+  // const senderName = document.getElementById(`sender-${messageId}`)
 
   msgComment.onclick = () => {
     if ((commentMsg.style.display = "none")) {
@@ -322,8 +330,8 @@ const generateOthersTextMsg = message => {
     }
     state.currentAction = 'reply'
     state.repliedTo = messageId.toString()
-    commentedName.innerHTML = senderName.innerHTML
-
+    commentedName.innerHTML = sender.name
+    cmntText.value = yourMsg.innerHTML.trim()
   }
 
   editBtn.onclick = () => {
@@ -345,7 +353,7 @@ socket.on('newTextMessage', message => {
     if (senderId.toString() === userId) generateOwnTextMsg(message)
     else {
       generateOthersTextMsg(message)
-      socket.emit('seen', currentRoom)
+      socket.emit('seen', state.currentRoom)
     }
   }
   document.getElementById(`lastText-${RoomId}`).innerHTML = text
@@ -412,6 +420,7 @@ socket.on('roomData', data => {
   const { Messages, Users } = data
   state.roomUsers = Users
   for (let message of Messages) {
+
     if (message.senderId.toString() === userId) generateOwnTextMsg(message)
     else generateOthersTextMsg(message)
   }

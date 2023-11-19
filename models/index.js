@@ -28,23 +28,27 @@ db.User.belongsToMany(db.Room, {
 })
 
 db.User.hasMany(db.Message, {
-  foreignKey: {
-    name: 'senderId'
-  }
+  as: 'sender',
+  foreignKey: 'senderId'
 })
 
 db.Message.belongsTo(db.User, {
-  foreignKey: {
-    name: 'senderId'
-  }
+  as: 'sender',
+  foreignKey: 'senderId'
 });
 
 db.Room.hasMany(db.Message);
 
 db.Message.belongsTo(db.Room);
 
-db.Message.hasOne(db.Message, {
-  as: "repliedTo"
+db.Message.hasMany(db.Message, {
+  as: "reply",
+  foreignKey: 'repliedToId'
+})
+
+db.Message.belongsTo(db.Message, {
+  as: "repliedTo",
+  foreignKey: 'repliedToId'
 })
 
 db.Sequelize = Sequelize
