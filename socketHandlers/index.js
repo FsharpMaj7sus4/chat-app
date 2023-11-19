@@ -134,15 +134,13 @@ io.on("connection", async socket => {
             order: [['createdAt', 'DESC']],
             include: [{
               model: User,
+              as: 'sender',
               attributes: ['name']
-            },
-            {
-              model: Message,
-              as: 'repliedTo'
             }],
             raw: true
           }
-        ]
+        ],
+        order: [[{ model: Message }, 'id', 'ASC']],
       })
 
       socket.emit('roomData', room)
