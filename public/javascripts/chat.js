@@ -15,7 +15,7 @@ const chatListSection = document.getElementById('chatListSection')
 
 let state = {
   userRooms: [],
-  currentRoom: '0',
+  currentRoom: 0,
   allUsers: [],
   roomUsers: [],
   currentAction: 'none', // 'none', 'reply', 'edit'
@@ -111,7 +111,7 @@ const generateOwnTextMsg = message => {
     commentedText = repliedTo.text ? repliedTo.text : repliedTo.file
     commentedSender = repliedTo.sender.name
   }
-  const item = `<div class="chat-transmiter-container">
+  const item = `<div class="chat-transmiter-container" id="message-${messageId}">
     <div
       class="commented-text p-1 ${commentedDisplay}"
       id="commented-${messageId}"
@@ -151,6 +151,12 @@ const generateOwnTextMsg = message => {
             href="#"
             >پاسخ</a
           >
+          <a
+            class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
+            id="msgDelete-${messageId}"
+            href="#"
+            >حذف</a
+          >
           <button
             class="btn-close"
             id="editClose-${messageId}"
@@ -184,6 +190,7 @@ const generateOwnTextMsg = message => {
 
   const commented = document.querySelector(`#commented-${messageId}`)
   const msgComment = document.querySelector(`#msgComment-${messageId}`)
+  const msgDelete = document.querySelector(`#msgDelete-${messageId}`)
   const msgEdit = document.querySelector(`#msgEdit-${messageId}`)
   const editDiv = document.querySelector(`#editDiv-${messageId}`)
   const editBtn = document.querySelector(`#editBtn-${messageId}`)
@@ -191,6 +198,10 @@ const generateOwnTextMsg = message => {
   const chatTransmiter = document.querySelector(`#chatTransmiter-${messageId}`)
   const yourMsg = document.querySelector(`#yourMsg-${messageId}`)
   const senderName = document.getElementById(`sender-${messageId}`)
+
+  msgDelete.onclick = () => {
+    socket.emit('deleteMessage', { messageId, roomId: state.currentRoom })
+  }
 
   msgComment.onclick = () => {
     if ((commentMsg.style.display = "none")) {
@@ -245,7 +256,7 @@ const generateOthersTextMsg = message => {
     commentedText = repliedTo.text ? repliedTo.text : repliedTo.file
     commentedSender = repliedTo.sender.name
   }
-  const item = `<div class="chat-reciever-container">
+  const item = `<div class="chat-reciever-container" id="message-${messageId}">
     <div
       class="commented-text p-1 ${commentedDisplay}"
       id="commented-${messageId}"
@@ -410,7 +421,7 @@ commentMsgClose.onclick = () => {
 }
 
 const selectChat = async roomId => {
-  if (state.currentRoom === '0') inputSection.classList.remove('d-none')
+  if (state.currentRoom === 0) inputSection.classList.remove('d-none')
   state.currentRoom = roomId
   messageList.innerHTML = ''
   socket.emit('roomData', roomId)
@@ -430,6 +441,15 @@ socket.on('roomData', data => {
 
 socket.on('editMessage', editedMsg => {
   document.querySelector(`#yourMsg-${editedMsg.id}`).innerHTML = editedMsg.text
+})
+
+socket.on('deleteMessage', data => {
+  const { messageId, roomId } = data
+  if (state.currentRoom === roomId) {
+    const deletedMessage = document.getElementById(`message-${messageId}`)
+    if (document.contains(deletedMessage))
+      deletedMessage.remove()
+  }
 })
 
 socket.on('seen', () => {

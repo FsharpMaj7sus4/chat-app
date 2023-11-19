@@ -207,6 +207,14 @@ io.on("connection", async socket => {
       io.to(message.RoomId).emit("editMessage", message)
     })
 
+    socket.on('deleteMessage', async data => {
+      const { messageId, roomId } = data
+      const deletedMessage = await Message.destroy({ where: { id: messageId } })
+      if (deletedMessage === 1) {
+        io.to(roomId).emit(`deleteMessage`, { messageId, roomId })
+      }
+    })
+
     socket.on('seen', async roomId => {
       await Message.update({ isSeen: true }, { where: { RoomId: roomId } })
       socket.to(roomId).emit('seen')
