@@ -1,6 +1,7 @@
 const io = require("socket.io")()
 const { promisify } = require("util")
 const jwt = require("jsonwebtoken")
+const fs = require('fs')
 const {
   Sequelize,
   sequelize,
@@ -113,9 +114,13 @@ const getRepliedMessage = async repliedToId => {
     include: [{
       model: User,
       as: 'sender',
-      attributes: ['name']
+      attributes: ['name'],
+      include: {
+        model: File,
+        attributes: ['originalName', 'fileName', 'size']
+      }
     }],
-    attributes: ['file', 'text'],
+    attributes: ['text'],
   })
   return repliedTo
 }
@@ -192,7 +197,6 @@ io.on("connection", async socket => {
       let newMessage = await Message
         .create(messageInfo)
         .then(message => message.get({ plain: true }))
-      // newMessage = await newMessage.get({ plain: true })
       if (repliedToId) {
         newMessage.repliedTo = await getRepliedMessage(repliedToId)
       }
@@ -240,6 +244,9 @@ io.on("connection", async socket => {
       }
     })
 
+    socket.on('deleteFile', async fileName => {
+      fs.unlinkSync(`${__dirname}/public/uploads/${fileName}`)
+    })
     socket.on('seen', async roomId => {
       await Message.update({ isSeen: true }, { where: { RoomId: roomId, senderId: { [Sequelize.Op.not]: user.id } } })
       socket.to(roomId).emit('seen')
