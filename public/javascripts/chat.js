@@ -628,6 +628,7 @@ fileUploadBoxClose.onclick = () => {
     // socket.emit('deleteFile')
   }
   state.currentAction = 'none'
+  state.uploadingFile = {}
   state.uploadingText = ''
 }
 
