@@ -123,7 +123,7 @@ const generateOwnTextMsg = message => {
   let commentedText = ''
   let commentedSender = ''
   let fileLink = ''
-  if (repliedTo && (repliedTo.text !== null || repliedTo.File.originalName !== null)) {
+  if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
     commentedDisplay = "d-flex"
     commentedText = repliedTo.text ? repliedTo.text : repliedTo.File.originalName
     commentedSender = repliedTo.sender.name

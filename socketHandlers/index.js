@@ -113,9 +113,13 @@ const getRepliedMessage = async repliedToId => {
     include: [{
       model: User,
       as: 'sender',
-      attributes: ['name']
+      attributes: ['name'],
+      include: {
+        model: File,
+        attributes: ['originalName', 'fileName', 'size']
+      }
     }],
-    attributes: ['file', 'text'],
+    attributes: ['text'],
   })
   return repliedTo
 }
@@ -192,7 +196,6 @@ io.on("connection", async socket => {
       let newMessage = await Message
         .create(messageInfo)
         .then(message => message.get({ plain: true }))
-      // newMessage = await newMessage.get({ plain: true })
       if (repliedToId) {
         newMessage.repliedTo = await getRepliedMessage(repliedToId)
       }
