@@ -201,9 +201,6 @@ io.on("connection", async socket => {
         plain: true
       })
       const message = result[1].dataValues
-      if (message.repliedToId) {
-        message.repliedTo = await getRepliedMessage(repliedToId)
-      }
       io.to(message.RoomId).emit("editMessage", message)
     })
 
