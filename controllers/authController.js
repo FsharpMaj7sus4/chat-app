@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken")
 const { User, Room } = require("../models")
 const catchAsync = require("../utils/catchAsync")
 const AppError = require("../utils/AppError")
+const io = require('../socketHandlers')
 
 const signToken = id =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -13,7 +14,7 @@ const createSendToken = (user, statusCode, res, message) => {
   const cookiesOptions = {
     expires: new Date(
       Date.now() +
-        process.env.JWT_COOKIES_EXPIRES_IN * 24 * 60 * 60 * 1000
+      process.env.JWT_COOKIES_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
   }
@@ -24,24 +25,26 @@ const createSendToken = (user, statusCode, res, message) => {
   const token = signToken(user.id)
   res.cookie("jwt", token, cookiesOptions)
 
-  return res.render("chat", {
-    data: {
-      user,
-    },
-  })
+  return res.redirect('/')
 }
 
 exports.signUp = catchAsync(async (req, res, next) => {
+  const { name, phoneNumber } = req.body
   const newUser = await User.create({
-    name: req.body.name,
-    phoneNumber: req.body.phoneNumber,
+    name,
+    phoneNumber,
   })
   const globalRoom = await Room.findOne({
     where: {
-      name: "global",
+      id: 1,
     },
   })
   await newUser.addRoom(globalRoom)
+  const newUserRaw = await newUser.get({ plain: true })
+  io.emit("newUser", newUserRaw)
+  io.to(1).emit('newUserInRoom', newUserRaw)
+
+  req.user = newUserRaw
 
   createSendToken(
     newUser,
@@ -49,6 +52,23 @@ exports.signUp = catchAsync(async (req, res, next) => {
     res,
     "you are signed up successfully!"
   )
+})
+
+exports.signupAPI = catchAsync(async (req, res, next) => {
+  const { name, phoneNumber } = req.body
+  const newUser = await User.create({
+    name,
+    phoneNumber,
+  })
+  const globalRoom = await Room.findOne({
+    where: {
+      id: 1,
+    },
+  })
+  await newUser.addRoom(globalRoom)
+
+  const token = signToken(newUser.id)
+  return res.status(200).json({ token })
 })
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -78,6 +98,33 @@ exports.login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res, "you are logged in successfully!")
 })
 
+exports.loginAPI = catchAsync(async (req, res, next) => {
+  // 1) check if user and password exists in req.body
+  let { phoneNumber } = req.body
+  if (!phoneNumber) {
+    throw new AppError("please provide your phoneNumber", 400)
+  }
+
+  phoneNumber = String(phoneNumber)
+
+  // 2) if user exists && password is correct
+  const user = await User.findOne({
+    where: {
+      phoneNumber,
+    },
+  })
+
+  if (!user) {
+    // throw new AppError('no user exists with this phoneNumber', 404)
+    return res
+      .status(404)
+      .json({ message: "no user exists with this phoneNumber" })
+  }
+
+  const token = signToken(user.id)
+  return res.status(200).json({ token })
+})
+
 exports.protect = catchAsync(async (req, res, next) => {
   // point: WE USULLY SEND TOKEN IN HEADER REQUEST (NOT BODY) THIS WAY => authorization: brearer <TOKEN>
   // or send token in cookies
@@ -89,14 +136,14 @@ exports.protect = catchAsync(async (req, res, next) => {
   ) {
     // req.headers.authorization.split(' ') => ['brearer', '<TOKEN>']
     token = req.headers.authorization.split(" ")[1]
-  } else if (req.cookies.jwt) {
+  } else if (req.cookies && req.cookies.jwt) {
     token = req.cookies.jwt
-  }
-  if (!token) {
-    throw new AppError(
-      "you are not logged in! please log in and try again.",
-      401
-    )
+  } else {
+    return res.redirect('/login')
+    // throw new AppError(
+    //   "you are not logged in! please log in and try again.",
+    //   401
+    // )
   }
 
   // 2) verification token
@@ -108,10 +155,13 @@ exports.protect = catchAsync(async (req, res, next) => {
   // 3) check if user still exists
   const currentUser = await User.findByPk(decodeToken.id)
   if (!currentUser) {
-    throw new AppError(
-      "The user belonging to this token does no longer exist!",
-      401
-    )
+    // throw new AppError(
+    //   "The user belonging to this token does no longer exist!",
+    //   401
+    // )
+    res.render('login', {
+      message: "user auth token in not valid"
+    })
   }
 
   // if compiler reachs at this posit and no error has occured,
