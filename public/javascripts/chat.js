@@ -537,7 +537,7 @@ socket.on('roomData', data => {
 
 socket.on('editMessage', editedMsg => {
   if (editedMsg.RoomId === state.currentRoom) {
-    document.querySelector(`#yourMsg-${editedMsg.id}`).innerHTML = editedMsg.text
+    document.querySelector(`#msgText-${editedMsg.id}`).innerHTML = editedMsg.text
   }
 })
 
