@@ -2,11 +2,12 @@ const io = require("socket.io")()
 const { promisify } = require("util")
 const jwt = require("jsonwebtoken")
 const {
-  User,
-  Room,
   Sequelize,
   sequelize,
+  User,
+  Room,
   Message,
+  File
 } = require("../models")
 const AppError = require("../utils/AppError")
 
@@ -152,18 +153,22 @@ io.on("connection", async socket => {
               {
                 model: Message,
                 as: 'repliedTo',
-                // where: {
-                //   id: {
-                //     [Sequelize.Op.ne]: null
-                //   }
-                // },
-                attributes: ['text', 'file'],
-                include: {
+                attributes: ['text'],
+                include: [{
                   model: User,
                   as: 'sender',
                   attributes: ['name']
                 },
+                {
+                  model: File,
+                  attributes: ['originalName', 'fileName', 'size']
+                }
+                ],
                 raw: true
+              },
+              {
+                model: File,
+                attributes: ['originalName', 'fileName', 'size']
               }
             ],
             raw: true
@@ -182,16 +187,39 @@ io.on("connection", async socket => {
         { text },
         { RoomId: roomId },
         { senderId: user.id },
-        repliedToId ? { repliedToId } : {}
+        repliedToId ? { repliedToId } : null
       )
-      let newMessage = await Message.create(messageInfo)
-      newMessage = await newMessage.get({ plain: true })
+      let newMessage = await Message
+        .create(messageInfo)
+        .then(message => message.get({ plain: true }))
+      // newMessage = await newMessage.get({ plain: true })
       if (repliedToId) {
         newMessage.repliedTo = await getRepliedMessage(repliedToId)
       }
       newMessage.sender = { name: user.name }
 
       io.to(Number(roomId)).emit("newTextMessage", newMessage)
+    })
+
+    socket.on("newFileMessage", async data => {
+      const { roomId, text, fileInfo } = data
+      const file = await File
+        .create(fileInfo)
+        .then(file => file.get({ plain: true }))
+      const messageInfo = Object.assign(
+        {},
+        text ? { text } : null,
+        { RoomId: roomId },
+        { senderId: user.id },
+        { FileId: file.id }
+      )
+      let newMessage = await Message
+        .create(messageInfo)
+        .then(message => message.get({ plain: true }))
+      // newMessage = await newMessage.get({ plain: true })
+      newMessage.sender = { name: user.name }
+      newMessage.File = file
+      io.to(Number(roomId)).emit("newFileMessage", newMessage)
     })
 
     socket.on('editMessage', async data => {

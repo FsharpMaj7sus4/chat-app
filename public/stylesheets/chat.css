@@ -1,3 +1,5 @@
+/** @format */
+
 @font-face {
 	font-family: vazir;
 	src: url(../fonts/Vazir-FD.ttf);
@@ -78,7 +80,6 @@ body {
 	overflow-y: auto;
 }
 .chats-list {
-	list-style: none;
 	padding: 0;
 	margin-bottom: 0 !important;
 	width: 100%;
@@ -86,7 +87,7 @@ body {
 	overflow-y: auto;
 }
 .chats-list > li {
-	height: fit-content;
+	height: auto;
 }
 .chats-list > li:hover {
 	background-color: rgb(238, 238, 238);
