@@ -233,7 +233,8 @@ const generateOwnTextMsg = message => {
       editingMsg.style.display = "none"
       state.editing = '0'
       input.value = ''
-    }
+    } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
+      cancelUploading()
     cmntText.value = yourMsg.innerText.trim()
     commentedName.innerHTML = `${senderName.innerHTML}:`
     state.currentAction = 'reply'
@@ -247,7 +248,8 @@ const generateOwnTextMsg = message => {
     if ((commentMsgStyle.getPropertyValue('display') === "flex")) {
       commentMsg.style.display = "none"
       state.repliedTo = '0'
-    }
+    } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
+      cancelUploading()
     editText.value = yourMsg.innerText.trim()
     input.value = msgText.innerText.trim()
     state.currentAction = 'edit'
@@ -255,14 +257,14 @@ const generateOwnTextMsg = message => {
   }
 
   editBtn.onclick = () => {
-    if (editDivStyle.getPropertyValue('display') === "none") {
+    if (editDivStyle.getPropertyValue('display') === "none")
       editDiv.style.display = "flex"
-    }
     chatTransmiter.style.maxWidth = "100%"
   }
 
   editClose.onclick = () => {
-    if (editDivStyle.getPropertyValue('display') === "flex") editDiv.style.display = "none"
+    if (editDivStyle.getPropertyValue('display') === "flex")
+      editDiv.style.display = "none"
     chatTransmiter.style.maxWidth = "90%"
   }
 }
@@ -367,7 +369,8 @@ const generateOthersTextMsg = message => {
       input.value = ''
 
       state.editing = '0'
-    }
+    } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
+      cancelUploading()
     commentedName.innerHTML = sender.name
     cmntText.value = yourMsg.innerHTML.trim()
 
@@ -618,10 +621,11 @@ fileUploadButton.onclick = () => {
   inputElement.dispatchEvent(new MouseEvent("click"))
 }
 
-fileUploadBoxClose.onclick = () => {
+const cancelUploading = () => {
   if (fileUploadBox.style.display === "flex")
     fileUploadBox.style.display = "none"
 
+  // currentAction is either 'uploading' or 'upload-finished'
   if (state.currentAction === 'uploading') {
     uploadController.abort()
   } else {
@@ -631,6 +635,8 @@ fileUploadBoxClose.onclick = () => {
   state.uploadingFile = {}
   state.uploadingText = ''
 }
+
+fileUploadBoxClose.onclick = cancelUploading
 
 
 const onUploadProgress = (event) => {
