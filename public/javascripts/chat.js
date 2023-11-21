@@ -192,7 +192,7 @@ const generateOwnTextMsg = message => {
           class="message-text ms-2 mb-0"
           id="yourMsg-${messageId}"
         >
-          ${fileLink}${text}
+          ${fileLink}<span id="msgText-${messageId}">${text}</span>
         </p>
       </div>
       <div
@@ -219,6 +219,7 @@ const generateOwnTextMsg = message => {
   const chatTransmiter = document.querySelector(`#chatTransmiter-${messageId}`)
   const yourMsg = document.querySelector(`#yourMsg-${messageId}`)
   const senderName = document.getElementById(`sender-${messageId}`)
+  const msgText = document.getElementById(`msgText-${messageId}`)
 
   msgDelete.onclick = () => {
     socket.emit('deleteMessage', { messageId, roomId: state.currentRoom })
@@ -233,7 +234,7 @@ const generateOwnTextMsg = message => {
       state.editing = '0'
       input.value = ''
     }
-    cmntText.value = yourMsg.innerHTML.trim()
+    cmntText.value = yourMsg.innerText.trim()
     commentedName.innerHTML = `${senderName.innerHTML}:`
     state.currentAction = 'reply'
     state.repliedTo = messageId.toString()
@@ -247,8 +248,8 @@ const generateOwnTextMsg = message => {
       commentMsg.style.display = "none"
       state.repliedTo = '0'
     }
-    editText.value = yourMsg.innerHTML.trim()
-    input.value = yourMsg.innerHTML.trim()
+    editText.value = yourMsg.innerText.trim()
+    input.value = msgText.innerText.trim()
     state.currentAction = 'edit'
     state.editing = messageId.toString()
   }
@@ -330,7 +331,7 @@ const generateOthersTextMsg = message => {
           class="message-text ms-2 mb-0"
           id="yourMsg-${messageId}"      
         >
-          ${fileLink}${text}
+          ${fileLink}<span id="msgText-${messageId}">${text}</span>
         </p>
       </div>
       <div
@@ -353,6 +354,7 @@ const generateOthersTextMsg = message => {
   const chatReciever = document.querySelector(`#chatReciever-${messageId}`)
   const editBtn = document.querySelector(`#editBtn-${messageId}`)
   const yourMsg = document.querySelector(`#yourMsg-${messageId}`)
+  const msgText = document.getElementById(`msgText-${messageId}`)
 
   // const senderName = document.getElementById(`sender-${messageId}`)
 
