@@ -4,11 +4,11 @@ module.exports = (Sequelize, sequelize) => {
             type: Sequelize.STRING,
             defaultValue: ''
         },
-        file: {
-            type: Sequelize.STRING,
-        },
+        isSeen: {
+            type: Sequelize.BOOLEAN,
+            defaultValue: false
+        }
     })
-  
+
     return Message
 }
-  
