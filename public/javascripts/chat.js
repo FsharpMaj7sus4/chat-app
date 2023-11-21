@@ -625,7 +625,7 @@ fileUploadBoxClose.onclick = () => {
   if (state.currentAction === 'uploading') {
     uploadController.abort()
   } else {
-    // socket.emit('deleteFile')
+    socket.emit('deleteFile', state.uploadingFile.fileName)
   }
   state.currentAction = 'none'
   state.uploadingFile = {}

@@ -1,6 +1,7 @@
 const io = require("socket.io")()
 const { promisify } = require("util")
 const jwt = require("jsonwebtoken")
+const fs = require('fs')
 const {
   Sequelize,
   sequelize,
@@ -243,6 +244,9 @@ io.on("connection", async socket => {
       }
     })
 
+    socket.on('deleteFile', async fileName => {
+      fs.unlinkSync(`${__dirname}/public/uploads/${fileName}`)
+    })
     socket.on('seen', async roomId => {
       await Message.update({ isSeen: true }, { where: { RoomId: roomId, senderId: { [Sequelize.Op.not]: user.id } } })
       socket.to(roomId).emit('seen')
