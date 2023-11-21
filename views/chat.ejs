@@ -214,8 +214,10 @@
 			const userId = "<%= userId %>"
 			const userName = "<%= userName %>"
 			const userPhone = "<%= userPhone %>"
-			socket.emit("allMyRooms")
 		</script>
 		<script src="/javascripts/chat.js"></script>
+		<script>
+			socket.emit("allMyRooms")
+		</script>
 	</body>
 </html>
