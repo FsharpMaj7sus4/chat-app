@@ -21,6 +21,15 @@ const fileUploadBoxClose = document.getElementById("fileUploadBoxClose")
 const progressBarElement = document.getElementById("progressBarElement")
 const fileName = document.getElementById("fileName")
 const percentageElement = document.getElementById("percentage")
+const newRoomButton = document.getElementById('newRoom')
+const allUsersList = document.getElementById('allUsersList')
+const createThisNewRoom = document.getElementById('createThisNewRoom')
+const newRoomUsersModal = document.getElementById('newRoomUserSelect')
+// const newRoomUsersModal = new bootstrap.Modal(document.querySelector("#newRoomUsersModal"))
+const newRoomNameModal = document.getElementById('newRoomNameSelect')
+// const newRoomNameModal = new bootstrap.Modal(document.querySelector("#newRoomNameSelect"))
+const newRoomName = document.getElementById('newRoomName')
+const confirmRoomName = document.getElementById('confirmRoomName')
 
 const uploadController = new AbortController();
 const instance = axios.create({
@@ -32,11 +41,12 @@ let state = {
   currentRoom: 0,
   allUsers: [],
   roomUsers: [],
-  currentAction: 'none', // 'none', 'reply', 'edit', 'uploading', 'upload-finished'
+  currentAction: 'none', // 'none', 'reply', 'edit', 'uploading', 'upload-finished', 'new-group'
   repliedTo: '0',
   editing: '0',
   uploadingText: '',
-  uploadingFile: {}
+  uploadingFile: {},
+  newRoomUsers: []
 }
 
 socket.on('allUsers', users => {
@@ -49,6 +59,66 @@ socket.on('newUser', user => {
 
 socket.on('newUserInRoom', user => {
   state.roomUsers.push(user)
+})
+
+socket.on("addedToNewRoom", newRoom => {
+  let { id, name } = newRoom
+  if (name.includes('|#|')) {
+    const names = name.split('|#|')
+    if (names[0] === userName)
+      name = names[1]
+    else
+      name = names[0]
+  }
+  state.userRooms.push({ id, name })
+
+  const msgPreviewSender = ''
+  const msgPreview = "هنوز پیامی نیست"
+  const createdAt = ''
+  let item = `
+    <li id="room-${id}" class="text-end p-2 w-100 border-bottom">   
+      <a
+        onclick="selectChat(${id})"
+        class="chats-list-link w-100 d-flex flex-row-reverse justify-content-start align-items-center"
+        href="#"
+      >
+        <div class="user-img mx-">
+          <img src="/images/user-img.webp" alt="" style="
+            width: 70px;
+          ">
+          <div class="user-status-div"></div>
+        </div>
+        <div class="user-msg mx-3" style='width: calc(100% - 100px);'>
+          <div class="user-name">
+            <span class="badge rounded-pill bg-primary"></span>
+            ${name}
+          </div>
+          <div 
+            class="user-message text-secondary"
+            id="lastText-${id}"
+            style="
+              display: flex;
+              justify-content: center;
+            "
+          >
+            <span>${msgPreviewSender}</span>
+            <span style="
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            ">${msgPreview}</span>
+            </div>
+          <small 
+            class="msg-time-passed text-secondary"
+            id="lastDate-${id}"
+          >
+            ${createdAt}
+          </small>
+        </div>
+      </a>
+    </li>`
+  chatList.insertAdjacentHTML("afterbegin", item)
+  chatList.scrollTop = 0
 })
 
 socket.on("allMyRooms", rooms => {
@@ -68,10 +138,17 @@ socket.on("allMyRooms", rooms => {
       else if (!room.lastMessage.text && room.lastMessage.file) msgPreview = room.lastMessage.file
       else msgPreview = `(File) ${room.lastMessage.text}`
     }
-    let item = `
-    <li  class="text-end p-2 w-100 border-bottom">   
+    let roomName
+    if (room.name.includes('|#|')) {
+      const names = room.name.split('|#|')
+      if (names[0] === userName)
+        roomName = names[1]
+      else
+        roomName = names[0]
+    } else roomName = room.name
+    const item = `
+    <li id="room-${room.id}" class="text-end p-2 w-100 border-bottom">   
       <a
-        id="room-${room.id}"
         onclick="selectChat(${room.id})"
         class="chats-list-link w-100 d-flex flex-row-reverse justify-content-start align-items-center"
         href="#"
@@ -85,7 +162,7 @@ socket.on("allMyRooms", rooms => {
         <div class="user-msg mx-3" style='width: calc(100% - 100px);'>
           <div class="user-name">
             <span class="badge rounded-pill bg-primary">${room.messageCount ? room.messageCount : ''}</span>
-            ${room.name}
+            ${roomName}
           </div>
           <div 
             class="user-message text-secondary"
@@ -521,8 +598,10 @@ commentMsgClose.onclick = () => {
 
 const selectChat = async roomId => {
   if (state.currentRoom === 0) inputSection.classList.remove('d-none')
-  state.currentRoom = roomId
   messageList.innerHTML = ''
+
+  state.currentRoom = roomId
+
   socket.emit('roomData', roomId)
 }
 
@@ -530,7 +609,6 @@ socket.on('roomData', data => {
   const { Messages, Users } = data
   state.roomUsers = Users
   for (let message of Messages) {
-
     if (message.senderId.toString() === userId) generateOwnTextMsg(message)
     else generateOthersTextMsg(message)
   }
@@ -644,7 +722,66 @@ const onUploadProgress = (event) => {
   percentageElement.innerHTML = percentage + "%";
   progressBarElement.setAttribute("aria-valuenow", percentage);
   progressBarElement.style.width = percentage + "%";
-};
+}
+
+newRoomButton.onclick = () => {
+  for (let user of state.allUsers) {
+    if (user.id.toString() === userId) {
+      continue
+    }
+    const { name, phoneNumber, id } = user
+    const item = `<li
+      class="list-group-item rounded-0 d-flex align-items-center justify-content-between"
+    >
+      <div class="custom-control custom-radio">
+        <input
+          class="custom-control-input"
+          id="check-user-${id}"
+          type="checkbox"
+          name="selectedUsers"
+        />
+        <label
+          class="custom-control-label"
+          for="check-user-${id}"
+        >
+          <p class="mb-0" id="user-name${id}">${name}</p>
+          <span class="small font-italic text-muted">${phoneNumber}</span>
+        </label>
+      </div>
+      <label for="check-user-${id}"
+        ><img
+          src="/images/user-img.webp"
+          alt=""
+          width="60"
+      /></label>
+    </li>`
+    allUsersList.insertAdjacentHTML("beforeend", item)
+    allUsersList.scrollTop = 0
+  }
+}
+
+createThisNewRoom.onclick = () => {
+  const checkedBoxes = document.querySelectorAll('input[name="selectedUsers"]:checked')
+  const newRoomUserIds = Array.from(checkedBoxes).map(box => box.id.substring(11,)) // check-user-${id}
+  if (newRoomUserIds.length > 1) {
+    newRoomNameModal.style.display = 'block'
+
+    state.currentAction = 'new-group'
+    state.newRoomUsers = newRoomUserIds
+  } else {
+    socket.emit('newPvRoom', newRoomUserIds[0])
+  }
+  allUsersList.innerHTML = ''
+}
+
+confirmRoomName.onclick = () => {
+  const roomName = newRoomName.value
+
+  socket.emit('newGpRoom', { name: roomName, userIds: state.newRoomUsers })
+
+  state.currentAction = 'none'
+  state.newRoomUsers = []
+}
 
 // fileUploadButton.addEventListener("click", function () {
 //   if (microphoneBtn.classList.contains("notclicked")) {

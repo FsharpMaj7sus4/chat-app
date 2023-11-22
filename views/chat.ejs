@@ -193,6 +193,20 @@
 					style="vertical-align: middle"
 					class="chats-list-head mb-0 fw-bold d-flex justify-content-end align-items-center p-2 text-white"
 				>
+					<button
+						data-bs-toggle="modal"
+						data-bs-target="#newRoomUserSelect"
+						id="newRoom"
+						type="button"
+						class="btn btn-success btn-lg"
+						style="margin-left: auto"
+					>
+						<i
+							class="bi bi-plus"
+							width="32"
+							height="32"
+						></i>
+					</button>
 					Chats
 				</h1>
 				<ul
@@ -201,6 +215,106 @@
 				></ul>
 			</section>
 		</main>
+		<!-- Modals -->
+		<div
+			class="modal fade"
+			id="newRoomUserSelect"
+			tabindex="-1"
+			aria-labelledby="usersModalLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5
+							class="modal-title"
+							id="usersModalLabel"
+						>
+							دیگر اعضای گروه را انتخاب کنید:
+						</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<ul
+							class="list-group"
+							id="allUsersList"
+						></ul>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-secondary"
+							data-bs-dismiss="modal"
+						>
+							انصراف
+						</button>
+						<button
+							id="createThisNewRoom"
+							type="button"
+							class="btn btn-primary"
+							data-bs-dismiss="modal"
+						>
+							ایجاد گروه
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div
+			class="modal fade"
+			id="newRoomNameSelect"
+			tabindex="-1"
+			aria-labelledby="roomNameLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5
+							class="modal-title"
+							id="roomNameLabel"
+						>
+							نام گروه را وارد کنید:
+						</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<input
+							type="text"
+							class="form-control"
+							id="newRoomName"
+						/>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-secondary"
+							data-bs-dismiss="modal"
+						>
+							انصراف
+						</button>
+						<button
+							id="confirmRoomName"
+							type="button"
+							class="btn btn-primary"
+							data-bs-dismiss="modal"
+						>
+							تایید
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
 		<script src="/javascripts/bootstrap.js"></script>
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="https://unpkg.com/axios/dist/axios.min.js"></script>

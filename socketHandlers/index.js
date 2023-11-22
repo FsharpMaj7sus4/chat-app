@@ -44,6 +44,7 @@ const whoIs = async (socket) => {
       }
     },
   })
+
   if (!user) {
     return socket.emit('logout')
   }
@@ -247,10 +248,29 @@ io.on("connection", async socket => {
     socket.on('deleteFile', async fileName => {
       fs.unlinkSync(`${__dirname}/public/uploads/${fileName}`)
     })
+
     socket.on('seen', async roomId => {
       await Message.update({ isSeen: true }, { where: { RoomId: roomId, senderId: { [Sequelize.Op.not]: user.id } } })
       socket.to(roomId).emit('seen')
     })
+
+    socket.on('newPvRoom', async otherUserId => {
+      const otherUser = await User.findByPk(otherUserId)
+      const roomName = `${user.name}|#|${otherUser.name}`
+      const newRoom = await Room.create({ name: roomName })
+      await newRoom.setUsers([user, otherUser])
+      if (connectedUsers[otherUserId]) {
+        io.sockets.connected[connectedUsers[otherUserId]].join(newRoom.id)
+        io.to(connectedUsers[otherUserId]).emit('addedToNewRoom', newRoom)
+      }
+      socket.join(newRoom.id)
+      socket.emit('addedToNewRoom', newRoom)
+    })
+
+    // socket.on('newGpRoom', async roomData => {
+    //   const { name, userIds } = roomData
+    //   const newRoom = await Room.create({ name })
+    // })
 
     socket.on("disconnect", () => {
       delete connectedUsers[user.id]
