@@ -24,10 +24,10 @@ const percentageElement = document.getElementById("percentage")
 const newRoomButton = document.getElementById('newRoom')
 const allUsersList = document.getElementById('allUsersList')
 const createThisNewRoom = document.getElementById('createThisNewRoom')
-const newRoomUsersModal = document.getElementById('newRoomUserSelect')
-// const newRoomUsersModal = new bootstrap.Modal(document.querySelector("#newRoomUsersModal"))
-const newRoomNameModal = document.getElementById('newRoomNameSelect')
-// const newRoomNameModal = new bootstrap.Modal(document.querySelector("#newRoomNameSelect"))
+// const newRoomUsersModal = document.getElementById('newRoomUserSelect')
+const newRoomUsersModal = new bootstrap.Modal(document.querySelector("#newRoomUserSelect"))
+// const newRoomNameModal = document.getElementById('newRoomNameSelect')
+const newRoomNameModal = new bootstrap.Modal(document.querySelector("#newRoomNameSelect"))
 const newRoomName = document.getElementById('newRoomName')
 const confirmRoomName = document.getElementById('confirmRoomName')
 
@@ -764,10 +764,10 @@ createThisNewRoom.onclick = () => {
   const checkedBoxes = document.querySelectorAll('input[name="selectedUsers"]:checked')
   const newRoomUserIds = Array.from(checkedBoxes).map(box => box.id.substring(11,)) // check-user-${id}
   if (newRoomUserIds.length > 1) {
-    newRoomNameModal.style.display = 'block'
+    newRoomNameModal.show()
 
     state.currentAction = 'new-group'
-    state.newRoomUsers = newRoomUserIds
+    state.newRoomUsers = newRoomUserIds.map(userId => Number(userId))
   } else {
     socket.emit('newPvRoom', newRoomUserIds[0])
   }

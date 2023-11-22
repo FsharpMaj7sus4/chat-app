@@ -259,6 +259,7 @@ io.on("connection", async socket => {
       const roomName = `${user.name}|#|${otherUser.name}`
       const newRoom = await Room.create({ name: roomName })
       await newRoom.setUsers([user, otherUser])
+
       if (connectedUsers[otherUserId]) {
         io.sockets.connected[connectedUsers[otherUserId]].join(newRoom.id)
         io.to(connectedUsers[otherUserId]).emit('addedToNewRoom', newRoom)
@@ -267,10 +268,27 @@ io.on("connection", async socket => {
       socket.emit('addedToNewRoom', newRoom)
     })
 
-    // socket.on('newGpRoom', async roomData => {
-    //   const { name, userIds } = roomData
-    //   const newRoom = await Room.create({ name })
-    // })
+    socket.on('newGpRoom', async roomData => {
+      const { name, userIds } = roomData
+      const newRoom = await Room.create({ name })
+      const users = await User.findAll({
+        where: {
+          id: {
+            [Sequelize.Op.in]: userIds
+          }
+        }
+      })
+      await newRoom.setUsers(users)
+
+      for (let userId of userIds) {
+        if (connectedUsers[userId]) {
+          io.sockets.sockets.get(connectedUsers[userId]).join(newRoom.id)
+          io.to(connectedUsers[userId]).emit('addedToNewRoom', newRoom)
+        }
+      }
+      socket.join(newRoom.id)
+      socket.emit('addedToNewRoom', newRoom)
+    })
 
     socket.on("disconnect", () => {
       delete connectedUsers[user.id]
