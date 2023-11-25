@@ -1,6 +1,6 @@
 const sendButton = document.getElementById('sendButton')
 const input = document.getElementById('input')
-const messageList = document.getElementById("messageList");
+const messageList = document.getElementById("messageList")
 const chatList = document.getElementById("chat-list")
 const editingMsg = document.querySelector("#editingMsg")
 const editingMsgStyle = window.getComputedStyle(editingMsg)
@@ -24,17 +24,15 @@ const percentageElement = document.getElementById("percentage")
 const newRoomButton = document.getElementById('newRoom')
 const allUsersList = document.getElementById('allUsersList')
 const createThisNewRoom = document.getElementById('createThisNewRoom')
-// const newRoomUsersModal = document.getElementById('newRoomUserSelect')
 const newRoomUsersModal = new bootstrap.Modal(document.querySelector("#newRoomUserSelect"))
-// const newRoomNameModal = document.getElementById('newRoomNameSelect')
 const newRoomNameModal = new bootstrap.Modal(document.querySelector("#newRoomNameSelect"))
 const newRoomName = document.getElementById('newRoomName')
 const confirmRoomName = document.getElementById('confirmRoomName')
 
-const uploadController = new AbortController();
+const uploadController = new AbortController()
 const instance = axios.create({
   baseURL: "http://localhost:3000"
-});
+})
 
 let state = {
   userRooms: [],
@@ -147,7 +145,10 @@ socket.on("allMyRooms", rooms => {
         roomName = names[0]
     } else roomName = room.name
     const item = `
-    <li id="room-${room.id}" class="text-end p-2 w-100 border-bottom">   
+    <li
+      id="room-${room.id}" 
+      class="list-group-item text-end p-2 w-100 border-bottom"
+    >
       <a
         onclick="selectChat(${room.id})"
         class="chats-list-link w-100 d-flex flex-row-reverse justify-content-start align-items-center"
@@ -192,6 +193,287 @@ socket.on("allMyRooms", rooms => {
     chatList.scrollTop = 0
   }
 })
+
+socket.on('newTextMessage', message => {
+  const { text, RoomId, senderId, repliedTo, createdAt } = message
+  if (state.currentRoom === RoomId) {
+    if (senderId.toString() === userId) generateOwnTextMsg(message)
+    else {
+      generateOthersTextMsg(message)
+      socket.emit('seen', state.currentRoom)
+    }
+  } else {
+    const chatMsgCountElement = document.getElementById(`msgCount-${RoomId}`)
+    const chatMsgCount = Number(chatMsgCountElement.innerText)
+    chatMsgCountElement.innerText = chatMsgCount + 1
+  }
+  document.getElementById(`lastText-${RoomId}`).innerHTML = text
+  document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
+})
+
+socket.on('newFileMessage', message => {
+  const { text, RoomId, senderId, repliedTo, createdAt, File } = message
+  if (state.currentRoom === RoomId) {
+    if (senderId.toString() === userId) generateOwnTextMsg(message)
+    else {
+      generateOthersTextMsg(message)
+      socket.emit('seen', state.currentRoom)
+    }
+  } else {
+    const chatMsgCountElement = document.getElementById(`msgCount-${RoomId}`)
+    const chatMsgCount = Number(chatMsgCountElement.innerText)
+    chatMsgCountElement.innerText = chatMsgCount + 1
+  }
+  document.getElementById(`lastText-${RoomId}`).innerHTML = text ? text : `(${File.originalName})`
+  document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
+})
+
+socket.on('roomData', data => {
+  const { Messages, Users } = data
+  state.roomUsers = Users
+  for (let message of Messages) {
+    if (message.senderId.toString() === userId) generateOwnTextMsg(message)
+    else generateOthersTextMsg(message)
+  }
+  msgListSection.scrollTo(0, messageList.scrollHeight)
+  socket.emit('seen', state.currentRoom)
+})
+
+socket.on('editMessage', editedMsg => {
+  if (editedMsg.RoomId === state.currentRoom) {
+    document.querySelector(`#msgText-${editedMsg.id}`).innerHTML = editedMsg.text
+  }
+})
+
+socket.on('deleteMessage', data => {
+  const { messageId, roomId } = data
+  if (state.currentRoom === roomId) {
+    const deletedMessage = document.getElementById(`message-${messageId}`)
+    if (document.contains(deletedMessage))
+      deletedMessage.remove()
+  }
+})
+
+socket.on('seen', () => {
+  const unseens = document.querySelectorAll('.bi-check')
+  for (unseenMsg of unseens) {
+    unseenMsg.classList.replace("bi-check", "bi-check-all")
+  }
+})
+
+editingMsgClose.onclick = () => {
+  editingMsg.style.display = "none"
+  input.value = ''
+
+  state.currentAction = 'none'
+  state.editing = '0'
+}
+
+commentMsgClose.onclick = () => {
+  commentMsg.style.display = "none"
+
+  state.currentAction = 'none'
+  state.repliedTo = '0'
+}
+
+sendButton.onclick = e => {
+  if (input.value) {
+    let newMessage = {}
+    switch (state.currentAction) {
+      case 'reply':
+        commentMsg.style.display = "none"
+
+        newMessage.repliedToId = state.repliedTo
+
+        state.repliedTo = '0'
+        state.currentAction = 'none'
+
+      case 'none':
+        newMessage.text = input.value
+        newMessage.roomId = state.currentRoom
+        socket.emit('newTextMessage', newMessage)
+
+        input.value = ''
+        break
+
+      case 'edit':
+        socket.emit('editMessage', {
+          id: Number(state.editing),
+          text: input.value
+        })
+
+        editingMsg.style.display = "none"
+        input.value = ''
+
+        state.editing = '0'
+        state.currentAction = 'none'
+        break
+
+      case 'uploading':
+        state.uploadingText = input.value
+        lockControls()
+        break
+
+      case 'upload-finished':
+        socket.emit('newFileMessage', {
+          text: input.value,
+          roomId: state.currentRoom,
+          fileInfo: state.uploadingFile
+        })
+
+        fileUploadBox.style.display = "none"
+        input.value = ''
+
+        state.currentAction = 'none'
+        state.uploadingFile = {}
+        break
+      default: //wtf?
+        console.log(state.currentAction)
+        break
+    }
+  } else {
+    switch (state.currentAction) {
+      case 'uploading':
+        state.uploadingText = 'MESSAGE_SENT_WITHOUT_TEXT_BUT_WITH_FILE'
+        lockControls()
+        break
+
+      case 'upload-finished':
+        socket.emit('newFileMessage', {
+          roomId: state.currentRoom,
+          file: state.uploadingFile
+        })
+
+        fileUploadBox.style.display = "none"
+
+        state.currentAction = 'none'
+        state.uploadingFile = {}
+        break
+    }
+  }
+}
+
+fileUploadButton.onclick = () => {
+  var inputElement = document.createElement("input")
+  inputElement.type = "file"
+  // Set accept to the file types you want the user to select. 
+  // Include both the file extension and the mime type
+  // inputElement.accept = accept;
+  inputElement.addEventListener("change", async () => {
+    state.currentAction = 'uploading'
+
+    const file = inputElement.files[0]
+    fileName.innerHTML = file.name
+    fileUploadBox.style.display = "flex"
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await axios({
+        method: 'post',
+        url: '/upload',
+        data: formData,
+        signal: uploadController.signal,
+        onUploadProgress,
+      })
+
+      const { originalname, filename, size } = res.data
+      state.uploadingFile = { originalName: originalname, fileName: filename, size }
+
+      // currentAction === uploading
+      if (state.uploadingText) {
+        socket.emit('newFileMessage', {
+          text: state.uploadingText !== 'MESSAGE_SENT_WITHOUT_TEXT_BUT_WITH_FILE'
+            ? state.uploadingText
+            : '',
+          roomId: state.currentRoom,
+          file: state.uploadingFile
+        })
+
+        fileUploadBox.style.display = "none"
+        progressBarElement.classList.remove('bg-success')
+        progressBarElement.classList.add('bg-info')
+        progressBarElement.classList.add('progress-bar-striped')
+        unlockControls()
+
+        state.uploadingFile = {}
+        state.uploadingText = ''
+        state.currentAction = 'none'
+      } else {
+        progressBarElement.classList.add('bg-success')
+        progressBarElement.classList.remove('bg-info')
+        progressBarElement.classList.remove('progress-bar-striped')
+
+        state.currentAction = 'upload-finished'
+      }
+    } catch (err) {
+      console.log('axios error: ', err)
+    }
+  })
+
+  inputElement.dispatchEvent(new MouseEvent("click"))
+}
+
+fileUploadBoxClose.onclick = cancelUploading
+
+newRoomButton.onclick = () => {
+  for (let user of state.allUsers) {
+    if (user.id.toString() === userId) {
+      continue
+    }
+    const { name, phoneNumber, id } = user
+    const item = `<li
+      class="list-group-item rounded-0 d-flex align-items-center justify-content-between"
+    >
+      <div class="custom-control custom-radio">
+        <input
+          class="custom-control-input"
+          id="check-user-${id}"
+          type="checkbox"
+          name="selectedUsers"
+        />
+        <label
+          class="custom-control-label"
+          for="check-user-${id}"
+        >
+          <p class="mb-0" id="user-name${id}">${name}</p>
+          <span class="small font-italic text-muted">${phoneNumber}</span>
+        </label>
+      </div>
+      <label for="check-user-${id}"
+        ><img
+          src="/images/user-img.webp"
+          alt=""
+          width="60"
+      /></label>
+    </li>`
+    allUsersList.insertAdjacentHTML("beforeend", item)
+    allUsersList.scrollTop = 0
+  }
+}
+
+createThisNewRoom.onclick = () => {
+  const checkedBoxes = document.querySelectorAll('input[name="selectedUsers"]:checked')
+  const newRoomUserIds = Array.from(checkedBoxes).map(box => box.id.substring(11,)) // check-user-${id}
+  if (newRoomUserIds.length > 1) {
+    newRoomNameModal.show()
+
+    state.currentAction = 'new-group'
+    state.newRoomUsers = newRoomUserIds.map(userId => Number(userId))
+  } else {
+    socket.emit('newPvRoom', newRoomUserIds[0])
+  }
+  allUsersList.innerHTML = ''
+}
+
+confirmRoomName.onclick = () => {
+  const roomName = newRoomName.value
+
+  socket.emit('newGpRoom', { name: roomName, userIds: state.newRoomUsers })
+
+  state.currentAction = 'none'
+  state.newRoomUsers = []
+}
 
 const generateOwnTextMsg = message => {
   const { text, repliedTo, isSeen, FileId, File } = message
@@ -466,117 +748,6 @@ const generateOthersTextMsg = message => {
   }
 }
 
-socket.on('newTextMessage', message => {
-  const { text, RoomId, senderId, repliedTo, createdAt } = message
-  if (state.currentRoom === RoomId) {
-    if (senderId.toString() === userId) generateOwnTextMsg(message)
-    else {
-      generateOthersTextMsg(message)
-      socket.emit('seen', state.currentRoom)
-    }
-  } else {
-    const chatMsgCountElement = document.getElementById(`msgCount-${RoomId}`)
-    const chatMsgCount = Number(chatMsgCountElement.innerText)
-    chatMsgCountElement.innerText = chatMsgCount + 1
-  }
-  document.getElementById(`lastText-${RoomId}`).innerHTML = text
-  document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
-})
-
-socket.on('newFileMessage', message => {
-  const { text, RoomId, senderId, repliedTo, createdAt, File } = message
-  if (state.currentRoom === RoomId) {
-    if (senderId.toString() === userId) generateOwnTextMsg(message)
-    else {
-      generateOthersTextMsg(message)
-      socket.emit('seen', state.currentRoom)
-    }
-  } else {
-    const chatMsgCountElement = document.getElementById(`msgCount-${RoomId}`)
-    const chatMsgCount = Number(chatMsgCountElement.innerText)
-    chatMsgCountElement.innerText = chatMsgCount + 1
-  }
-  document.getElementById(`lastText-${RoomId}`).innerHTML = text ? text : `(${File.originalName})`
-  document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
-})
-
-sendButton.onclick = e => {
-  if (input.value) {
-    let newMessage = {}
-    switch (state.currentAction) {
-      case 'reply':
-        commentMsg.style.display = "none"
-
-        newMessage.repliedToId = state.repliedTo
-
-        state.repliedTo = '0'
-        state.currentAction = 'none'
-
-      case 'none':
-        newMessage.text = input.value
-        newMessage.roomId = state.currentRoom
-        socket.emit('newTextMessage', newMessage)
-
-        input.value = ''
-        break
-
-      case 'edit':
-        socket.emit('editMessage', {
-          id: Number(state.editing),
-          text: input.value
-        })
-
-        editingMsg.style.display = "none"
-        input.value = ''
-
-        state.editing = '0'
-        state.currentAction = 'none'
-        break
-
-      case 'uploading':
-        state.uploadingText = input.value
-        lockControls()
-        break
-
-      case 'upload-finished':
-        socket.emit('newFileMessage', {
-          text: input.value,
-          roomId: state.currentRoom,
-          fileInfo: state.uploadingFile
-        })
-
-        fileUploadBox.style.display = "none"
-        input.value = ''
-
-        state.currentAction = 'none'
-        state.uploadingFile = {}
-        break
-      default: //wtf?
-        console.log(state.currentAction)
-        break
-    }
-  } else {
-    switch (state.currentAction) {
-      case 'uploading':
-        state.uploadingText = 'MESSAGE_SENT_WITHOUT_TEXT_BUT_WITH_FILE'
-        lockControls()
-        break
-
-      case 'upload-finished':
-        socket.emit('newFileMessage', {
-          roomId: state.currentRoom,
-          file: state.uploadingFile
-        })
-
-        fileUploadBox.style.display = "none"
-
-        state.currentAction = 'none'
-        state.uploadingFile = {}
-        break
-    }
-  }
-}
-
 const lockControls = () => {
   sendButton.style.disabled = true
   input.style.disabled = true
@@ -589,123 +760,18 @@ const unlockControls = () => {
   chatList.disabled = false
 }
 
-editingMsgClose.onclick = () => {
-  editingMsg.style.display = "none"
-  input.value = ''
-
-  state.currentAction = 'none'
-  state.editing = '0'
-}
-
-commentMsgClose.onclick = () => {
-  commentMsg.style.display = "none"
-
-  state.currentAction = 'none'
-  state.repliedTo = '0'
-}
-
 const selectChat = async roomId => {
-  if (state.currentRoom === 0) inputSection.classList.remove('d-none')
+  if (state.currentRoom === 0)
+    inputSection.classList.remove('d-none')
+  if (state.currentRoom !== 0)
+    document.getElementById(`room-${state.currentRoom}`).classList.remove('active')
+  document.getElementById(`room-${roomId}`).classList.add('active')
   messageList.innerHTML = ''
   document.getElementById(`msgCount-${roomId}`).innerText = ''
 
   state.currentRoom = roomId
 
   socket.emit('roomData', roomId)
-}
-
-socket.on('roomData', data => {
-  const { Messages, Users } = data
-  state.roomUsers = Users
-  for (let message of Messages) {
-    if (message.senderId.toString() === userId) generateOwnTextMsg(message)
-    else generateOthersTextMsg(message)
-  }
-  msgListSection.scrollTo(0, messageList.scrollHeight)
-  socket.emit('seen', state.currentRoom)
-})
-
-socket.on('editMessage', editedMsg => {
-  if (editedMsg.RoomId === state.currentRoom) {
-    document.querySelector(`#msgText-${editedMsg.id}`).innerHTML = editedMsg.text
-  }
-})
-
-socket.on('deleteMessage', data => {
-  const { messageId, roomId } = data
-  if (state.currentRoom === roomId) {
-    const deletedMessage = document.getElementById(`message-${messageId}`)
-    if (document.contains(deletedMessage))
-      deletedMessage.remove()
-  }
-})
-
-socket.on('seen', () => {
-  const unseens = document.querySelectorAll('.bi-check')
-  for (unseenMsg of unseens) {
-    unseenMsg.classList.replace("bi-check", "bi-check-all")
-  }
-})
-
-fileUploadButton.onclick = () => {
-  var inputElement = document.createElement("input")
-  inputElement.type = "file"
-  // Set accept to the file types you want the user to select. 
-  // Include both the file extension and the mime type
-  // inputElement.accept = accept;
-  inputElement.addEventListener("change", async () => {
-    state.currentAction = 'uploading'
-
-    const file = inputElement.files[0]
-    fileName.innerHTML = file.name
-    fileUploadBox.style.display = "flex"
-
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-      const res = await axios({
-        method: 'post',
-        url: '/upload',
-        data: formData,
-        signal: uploadController.signal,
-        onUploadProgress,
-      })
-
-      const { originalname, filename, size } = res.data
-      state.uploadingFile = { originalName: originalname, fileName: filename, size }
-
-      // currentAction === uploading
-      if (state.uploadingText) {
-        socket.emit('newFileMessage', {
-          text: state.uploadingText !== 'MESSAGE_SENT_WITHOUT_TEXT_BUT_WITH_FILE'
-            ? state.uploadingText
-            : '',
-          roomId: state.currentRoom,
-          file: state.uploadingFile
-        })
-
-        fileUploadBox.style.display = "none"
-        progressBarElement.classList.remove('bg-success')
-        progressBarElement.classList.add('bg-info')
-        progressBarElement.classList.add('progress-bar-striped')
-        unlockControls()
-
-        state.uploadingFile = {}
-        state.uploadingText = ''
-        state.currentAction = 'none'
-      } else {
-        progressBarElement.classList.add('bg-success')
-        progressBarElement.classList.remove('bg-info')
-        progressBarElement.classList.remove('progress-bar-striped')
-
-        state.currentAction = 'upload-finished'
-      }
-    } catch (err) {
-      console.log('axios error: ', err)
-    }
-  })
-
-  inputElement.dispatchEvent(new MouseEvent("click"))
 }
 
 const cancelUploading = () => {
@@ -723,73 +789,11 @@ const cancelUploading = () => {
   state.uploadingText = ''
 }
 
-fileUploadBoxClose.onclick = cancelUploading
-
-
 const onUploadProgress = (event) => {
   const percentage = Math.round((100 * event.loaded) / event.total);
   percentageElement.innerHTML = percentage + "%";
   progressBarElement.setAttribute("aria-valuenow", percentage);
   progressBarElement.style.width = percentage + "%";
-}
-
-newRoomButton.onclick = () => {
-  for (let user of state.allUsers) {
-    if (user.id.toString() === userId) {
-      continue
-    }
-    const { name, phoneNumber, id } = user
-    const item = `<li
-      class="list-group-item rounded-0 d-flex align-items-center justify-content-between"
-    >
-      <div class="custom-control custom-radio">
-        <input
-          class="custom-control-input"
-          id="check-user-${id}"
-          type="checkbox"
-          name="selectedUsers"
-        />
-        <label
-          class="custom-control-label"
-          for="check-user-${id}"
-        >
-          <p class="mb-0" id="user-name${id}">${name}</p>
-          <span class="small font-italic text-muted">${phoneNumber}</span>
-        </label>
-      </div>
-      <label for="check-user-${id}"
-        ><img
-          src="/images/user-img.webp"
-          alt=""
-          width="60"
-      /></label>
-    </li>`
-    allUsersList.insertAdjacentHTML("beforeend", item)
-    allUsersList.scrollTop = 0
-  }
-}
-
-createThisNewRoom.onclick = () => {
-  const checkedBoxes = document.querySelectorAll('input[name="selectedUsers"]:checked')
-  const newRoomUserIds = Array.from(checkedBoxes).map(box => box.id.substring(11,)) // check-user-${id}
-  if (newRoomUserIds.length > 1) {
-    newRoomNameModal.show()
-
-    state.currentAction = 'new-group'
-    state.newRoomUsers = newRoomUserIds.map(userId => Number(userId))
-  } else {
-    socket.emit('newPvRoom', newRoomUserIds[0])
-  }
-  allUsersList.innerHTML = ''
-}
-
-confirmRoomName.onclick = () => {
-  const roomName = newRoomName.value
-
-  socket.emit('newGpRoom', { name: roomName, userIds: state.newRoomUsers })
-
-  state.currentAction = 'none'
-  state.newRoomUsers = []
 }
 
 // fileUploadButton.addEventListener("click", function () {
