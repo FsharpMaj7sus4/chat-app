@@ -335,7 +335,7 @@ const unlockControls = () => {
   chatList.disabled = false
 }
 
-const selectChat = async roomId => {
+const selectChat = roomId => {
   if (state.currentRoom === 0)
     inputSection.classList.remove('d-none')
   if (state.currentRoom !== 0)
@@ -371,27 +371,18 @@ const onUploadProgress = () => {
   progressBarElement.style.width = percentage + "%";
 }
 
-socket.on('allUsers', users => {
-  state.allUsers = users
-})
+const pvNameHandler = name => {
+  const names = name.split('|#|')
+  if (names[0] === userName)
+    return names[1]
+  else
+    return names[0]
+}
 
-socket.on('newUser', user => {
-  state.allUsers.push(user)
-})
-
-socket.on('newUserInRoom', user => {
-  state.roomUsers.push(user)
-})
-
-socket.on("addedToNewRoom", newRoom => {
+const handleNewRoom = newRoom => {
   let { id, name } = newRoom
-  if (name.includes('|#|')) {
-    const names = name.split('|#|')
-    if (names[0] === userName)
-      name = names[1]
-    else
-      name = names[0]
-  }
+  if (name.includes('|#|'))
+    name = pvNameHandler(name)
   state.userRooms.push({ id, name })
 
   const msgPreviewSender = ''
@@ -412,7 +403,7 @@ socket.on("addedToNewRoom", newRoom => {
         </div>
         <div class="user-msg mx-3" style='width: calc(100% - 100px);'>
           <div class="user-name">
-            <span class="badge rounded-pill bg-primary"></span>
+            <span id="msgCount-${id}" class="badge rounded-pill bg-primary"></span>
             ${name}
           </div>
           <div 
@@ -440,7 +431,29 @@ socket.on("addedToNewRoom", newRoom => {
       </a>
     </li>`
   chatList.insertAdjacentHTML("afterbegin", item)
-  chatList.scrollTop = 0
+}
+
+socket.on('allUsers', users => {
+  state.allUsers = users
+})
+
+socket.on('newUser', user => {
+  state.allUsers.push(user)
+})
+
+socket.on('newUserInRoom', user => {
+  state.roomUsers.push(user)
+})
+
+socket.on("addedToNewRoom", handleNewRoom)
+
+socket.on("createdNewRoom", data => {
+  const { room, isNew } = data
+  if (isNew) {
+    handleNewRoom(room)
+    chatList.scrollTop = 0
+  }
+  selectChat(room.id)
 })
 
 socket.on("allMyRooms", rooms => {

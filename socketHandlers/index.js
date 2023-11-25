@@ -260,16 +260,22 @@ io.on("connection", async socket => {
 
     socket.on('newPvRoom', async otherUserId => {
       const otherUser = await User.findByPk(otherUserId)
-      const roomName = `${user.name}|#|${otherUser.name}`
-      const newRoom = await Room.create({ name: roomName })
-      await newRoom.setUsers([user, otherUser])
+      const roomName = (user.name > otherUser.name)
+        ? `${user.name}|#|${otherUser.name}`
+        : `${otherUser.name}|#|${user.name}`
+      const [newRoom, created] = await Room.findOrCreate({ where: { name: roomName } })
+      if (created) {
+        await newRoom.setUsers([user, otherUser])
 
-      if (connectedUsers[otherUserId]) {
-        io.sockets.connected[connectedUsers[otherUserId]].join(newRoom.id)
-        io.to(connectedUsers[otherUserId]).emit('addedToNewRoom', newRoom)
+        if (connectedUsers[otherUserId]) {
+          io.sockets.connected[connectedUsers[otherUserId]].join(newRoom.id)
+          io.to(connectedUsers[otherUserId]).emit('addedToNewRoom', newRoom)
+        }
+        socket.join(newRoom.id)
+        socket.emit('createdNewRoom', { room: newRoom, isNew: true })
+      } else {
+        socket.emit('createdNewRoom', { room: newRoom, isNew: false })
       }
-      socket.join(newRoom.id)
-      socket.emit('addedToNewRoom', newRoom)
     })
 
     socket.on('newGpRoom', async roomData => {
@@ -291,7 +297,7 @@ io.on("connection", async socket => {
         }
       }
       socket.join(newRoom.id)
-      socket.emit('addedToNewRoom', newRoom)
+      socket.emit('createdNewRoom', { room: newRoom, isNew: true })
     })
 
     socket.on("disconnect", () => {
