@@ -27,6 +27,8 @@ const allUsersList = document.getElementById('allUsersList')
 const createThisNewRoom = document.getElementById('createThisNewRoom')
 const newRoomUsersModal = new bootstrap.Modal(document.querySelector("#newRoomUserSelect"))
 const newRoomNameModal = new bootstrap.Modal(document.querySelector("#newRoomNameSelect"))
+const userSelectModalMsg = document.getElementById('userSelectModalMsg')
+const roomNameModalMsg = document.getElementById('roomNameModalMsg')
 const newRoomName = document.getElementById('newRoomName')
 const confirmRoomName = document.getElementById('confirmRoomName')
 
@@ -782,23 +784,36 @@ createThisNewRoom.onclick = () => {
   const checkedBoxes = document.querySelectorAll('input[name="selectedUsers"]:checked')
   const newRoomUserIds = Array.from(checkedBoxes).map(box => box.id.substring(11,)) // check-user-${id}
   if (newRoomUserIds.length > 1) {
+    newRoomUsersModal.hide()
     newRoomNameModal.show()
+    allUsersList.innerHTML = ''
+    roomNameModalMsg.innerText = ''
 
     state.currentAction = 'new-group'
     state.newRoomUsers = newRoomUserIds.map(userId => Number(userId))
-  } else {
+  } else if (newRoomUserIds.length === 1) {
+    newRoomUsersModal.hide()
+    allUsersList.innerHTML = ''
+    roomNameModalMsg.innerText = ''
+
     socket.emit('newPvRoom', newRoomUserIds[0])
+  } else {
+    userSelectModalMsg.innerText = "اعضای گروه نمی تواند خالی باشد"
   }
-  allUsersList.innerHTML = ''
 }
 
 confirmRoomName.onclick = () => {
   const roomName = newRoomName.value
+  if (!roomName)
+    roomNameModalMsg.innerText = "نام گروه نمی تواند خالی باشد"
+  else {
+    roomNameModalMsg.innerText = ''
 
-  socket.emit('newGpRoom', { name: roomName, userIds: state.newRoomUsers })
+    socket.emit('newGpRoom', { name: roomName, userIds: state.newRoomUsers })
 
-  state.currentAction = 'none'
-  state.newRoomUsers = []
+    state.currentAction = 'none'
+    state.newRoomUsers = []
+  }
 }
 
 inputForm.onsubmit = e => {
