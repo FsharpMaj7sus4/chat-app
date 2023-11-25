@@ -362,7 +362,7 @@ const cancelUploading = () => {
   state.uploadingText = ''
 }
 
-const onUploadProgress = (event) => {
+const onUploadProgress = () => {
   const percentage = Math.round((100 * event.loaded) / event.total);
   percentageElement.innerHTML = percentage + "%";
   progressBarElement.setAttribute("aria-valuenow", percentage);
@@ -531,6 +531,8 @@ socket.on('newTextMessage', message => {
   }
   document.getElementById(`lastText-${RoomId}`).innerHTML = text
   document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
+  const chatItems = document.getElementsByTagName("li")
+  chatItems[0].parentNode.insertBefore(chatItems[`room-${RoomId}`], chatItems[0])
 })
 
 socket.on('newFileMessage', message => {
@@ -548,6 +550,8 @@ socket.on('newFileMessage', message => {
   }
   document.getElementById(`lastText-${RoomId}`).innerHTML = text ? text : `(${File.originalName})`
   document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
+  const chatItems = document.getElementsByTagName("li")
+  chatItems[0].parentNode.insertBefore(chatItems[`room-${RoomId}`], chatItems[0])
 })
 
 socket.on('roomData', data => {
