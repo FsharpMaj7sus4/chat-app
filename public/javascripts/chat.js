@@ -161,7 +161,7 @@ socket.on("allMyRooms", rooms => {
         </div>
         <div class="user-msg mx-3" style='width: calc(100% - 100px);'>
           <div class="user-name">
-            <span class="badge rounded-pill bg-primary">${room.messageCount ? room.messageCount : ''}</span>
+            <span id="msgCount-${room.id}" class="badge rounded-pill bg-primary">${room.messageCount ? room.messageCount : ''}</span>
             ${roomName}
           </div>
           <div 
@@ -474,6 +474,10 @@ socket.on('newTextMessage', message => {
       generateOthersTextMsg(message)
       socket.emit('seen', state.currentRoom)
     }
+  } else {
+    const chatMsgCountElement = document.getElementById(`msgCount-${RoomId}`)
+    const chatMsgCount = Number(chatMsgCountElement.innerText)
+    chatMsgCountElement.innerText = chatMsgCount + 1
   }
   document.getElementById(`lastText-${RoomId}`).innerHTML = text
   document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
@@ -487,6 +491,10 @@ socket.on('newFileMessage', message => {
       generateOthersTextMsg(message)
       socket.emit('seen', state.currentRoom)
     }
+  } else {
+    const chatMsgCountElement = document.getElementById(`msgCount-${RoomId}`)
+    const chatMsgCount = Number(chatMsgCountElement.innerText)
+    chatMsgCountElement.innerText = chatMsgCount + 1
   }
   document.getElementById(`lastText-${RoomId}`).innerHTML = text ? text : `(${File.originalName})`
   document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
@@ -599,6 +607,7 @@ commentMsgClose.onclick = () => {
 const selectChat = async roomId => {
   if (state.currentRoom === 0) inputSection.classList.remove('d-none')
   messageList.innerHTML = ''
+  document.getElementById(`msgCount-${roomId}`).innerText = ''
 
   state.currentRoom = roomId
 
