@@ -170,7 +170,9 @@ const generateOwnTextMsg = message => {
     } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
       cancelUploading()
     cmntText.value = yourMsg.innerText.trim()
+    input.focus()
     commentedName.innerHTML = `${senderName.innerHTML}:`
+
     state.currentAction = 'reply'
     state.repliedTo = messageId.toString()
   }
@@ -186,6 +188,8 @@ const generateOwnTextMsg = message => {
       cancelUploading()
     editText.value = yourMsg.innerText.trim()
     input.value = msgText.innerText.trim()
+    input.focus()
+
     state.currentAction = 'edit'
     state.editing = messageId.toString()
   }
@@ -307,6 +311,7 @@ const generateOthersTextMsg = message => {
       cancelUploading()
     commentedName.innerHTML = sender.name
     cmntText.value = yourMsg.innerHTML.trim()
+    input.focus()
 
     state.currentAction = 'reply'
     state.repliedTo = messageId.toString()
@@ -343,6 +348,7 @@ const selectChat = roomId => {
   document.getElementById(`room-${roomId}`).classList.add('active')
   messageList.innerHTML = ''
   document.getElementById(`msgCount-${roomId}`).innerText = ''
+  input.focus()
 
   state.currentRoom = roomId
 
