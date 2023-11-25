@@ -52,7 +52,7 @@ const whoIs = async (socket) => {
   return user
 }
 
-const makeChatListAndJoin = async (socket, roomsData) => {
+const makeChatListAndJoin = async (socket, roomsData, userId) => {
   let roomIdList = roomsData.map(room => room.id)
   await socket.join(roomIdList)
 
@@ -89,6 +89,10 @@ const makeChatListAndJoin = async (socket, roomsData) => {
       RoomId: {
         [Sequelize.Op.in]: roomIdList,
       },
+      isSeen: false,
+      senderId: {
+        [Sequelize.Op.not]: userId
+      }
     },
     group: ["RoomId"],
     attributes: [
@@ -131,7 +135,7 @@ io.on("connection", async socket => {
     const user = await whoIs(socket)
     const roomsData = user.dataValues.Rooms.map(room => room.get({ plain: true }))
     socket.on('allMyRooms', async () => {
-      const chatList = await makeChatListAndJoin(socket, roomsData)
+      const chatList = await makeChatListAndJoin(socket, roomsData, user.id)
       socket.emit("allMyRooms", chatList)
       const allUsers = await User.findAll({ raw: true })
       socket.emit('allUsers', allUsers)
