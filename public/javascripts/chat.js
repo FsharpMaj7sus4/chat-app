@@ -43,8 +43,8 @@ let state = {
   allUsers: [],
   roomUsers: [],
   currentAction: 'none', // 'none', 'reply', 'edit', 'uploading', 'upload-finished', 'new-group'
-  repliedTo: '0',
-  editing: '0',
+  repliedTo: 0,
+  editing: 0,
   uploadingText: '',
   uploadingFile: {},
   newRoomUsers: []
@@ -167,6 +167,7 @@ const generateOwnTextMsg = message => {
       editingMsg.style.display = "none"
       state.editing = '0'
       input.value = ''
+      state.editing = 0
     } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
       cancelUploading()
     cmntText.value = yourMsg.innerText.trim()
@@ -174,7 +175,7 @@ const generateOwnTextMsg = message => {
     commentedName.innerHTML = `${senderName.innerHTML}:`
 
     state.currentAction = 'reply'
-    state.repliedTo = messageId.toString()
+    state.repliedTo = messageId
   }
 
   msgEdit.onclick = () => {
@@ -183,7 +184,7 @@ const generateOwnTextMsg = message => {
     }
     if ((commentMsgStyle.getPropertyValue('display') === "flex")) {
       commentMsg.style.display = "none"
-      state.repliedTo = '0'
+      state.repliedTo = 0
     } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
       cancelUploading()
     editText.value = yourMsg.innerText.trim()
@@ -191,7 +192,7 @@ const generateOwnTextMsg = message => {
     input.focus()
 
     state.currentAction = 'edit'
-    state.editing = messageId.toString()
+    state.editing = messageId
   }
 
   editBtn.onclick = () => {
@@ -306,7 +307,7 @@ const generateOthersTextMsg = message => {
       editingMsg.style.display = "none"
       input.value = ''
 
-      state.editing = '0'
+      state.editing = 0
     } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
       cancelUploading()
     commentedName.innerHTML = sender.name
@@ -314,7 +315,7 @@ const generateOthersTextMsg = message => {
     input.focus()
 
     state.currentAction = 'reply'
-    state.repliedTo = messageId.toString()
+    state.repliedTo = messageId
   }
 
   editBtn.onclick = () => {
@@ -613,14 +614,14 @@ editingMsgClose.onclick = () => {
   input.value = ''
 
   state.currentAction = 'none'
-  state.editing = '0'
+  state.editing = 0
 }
 
 commentMsgClose.onclick = () => {
   commentMsg.style.display = "none"
 
   state.currentAction = 'none'
-  state.repliedTo = '0'
+  state.repliedTo = 0
 }
 
 sendButton.onclick = e => {
@@ -632,7 +633,7 @@ sendButton.onclick = e => {
 
         newMessage.repliedToId = state.repliedTo
 
-        state.repliedTo = '0'
+        state.repliedTo = 0
         state.currentAction = 'none'
 
       case 'none':
@@ -645,14 +646,14 @@ sendButton.onclick = e => {
 
       case 'edit':
         socket.emit('editMessage', {
-          id: Number(state.editing),
+          id: state.editing,
           text: input.value
         })
 
         editingMsg.style.display = "none"
         input.value = ''
 
-        state.editing = '0'
+        state.editing = 0
         state.currentAction = 'none'
         break
 
