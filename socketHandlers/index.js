@@ -122,7 +122,7 @@ const getRepliedMessage = async repliedToId => {
       attributes: ['name'],
       include: {
         model: File,
-        attributes: ['originalName', 'fileName', 'size']
+        attributes: ['originalName', 'fileName', 'size', 'mimeType']
       }
     }],
     attributes: ['text'],
@@ -171,14 +171,14 @@ io.on("connection", async socket => {
                 },
                 {
                   model: File,
-                  attributes: ['originalName', 'fileName', 'size']
+                  attributes: ['originalName', 'fileName', 'size', 'mimeType']
                 }
                 ],
                 raw: true
               },
               {
                 model: File,
-                attributes: ['originalName', 'fileName', 'size']
+                attributes: ['originalName', 'fileName', 'size', 'mimeType']
               }
             ],
             raw: true

@@ -1007,8 +1007,13 @@ fileUploadButton.onclick = () => {
         onUploadProgress,
       })
 
-      const { originalname, filename, size } = res.data
-      state.uploadingFile = { originalName: originalname, fileName: filename, size }
+      const { originalname, filename, size, mimetype } = res.data
+      state.uploadingFile = {
+        originalName: originalname,
+        fileName: filename,
+        size,
+        mimeType: mimetype
+      }
 
       // currentAction === uploading
       if (state.uploadingText) {
