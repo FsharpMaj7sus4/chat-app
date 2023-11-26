@@ -329,9 +329,30 @@ const generateOwnFileMsg = message => {
   let commentedText = ''
   let commentedSender = ''
   let filePart
-  let fileLink
-  if (FileId) fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>) - `
-  // if (File.)
+  switch (File.mimeType.split("/")[0]) { // file extention
+    case 'image':
+      filePart = `<img
+        src="/uploads/${File.fileName}"
+        style="
+          max-height: 500px;
+          max-width: 500px;
+          height: auto;
+          width: auto;
+        "
+      />`
+      break
+
+    case 'audio':
+      filePart = `<audio controls>
+        <source src="/uploads/${File.fileName}" type="${File.mimeType}">
+      </audio>`
+      break
+
+    default:
+      filePart = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)` + text ? ` - ` : ''
+      break
+  }
+
   if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
     commentedDisplay = "d-flex"
     commentedText = repliedTo.text ? repliedTo.text : repliedTo.File.originalName
@@ -393,12 +414,13 @@ const generateOwnFileMsg = message => {
       <div
         class="d-flex justify-content-start align-items-start flex-nowrap px-2 my-1"
       >
-        <span><i class="bi ${isSeen ? "bi-check-all" : "bi-check"} d-flex fs-5"></i></span>
+        ${filePart}
         <p
           class="message-text ms-2 mb-0"
           id="yourMsg-${messageId}"
         >
-          ${fileLink}<span id="msgText-${messageId}">${text}</span>
+          <i class="bi ${isSeen ? "bi-check-all" : "bi-check"} d-flex fs-5"></i>
+          <span id="msgText-${messageId}">${text}</span>
         </p>
       </div>
       <div
@@ -485,13 +507,35 @@ const generateOthersFileMsg = message => {
   let commentedDisplay = ''
   let commentedText = ''
   let commentedSender = ''
-  let fileLink = ''
+  let filePart
+  switch (File.mimeType.split("/")[0]) { // file extention
+    case 'image':
+      filePart = `<img
+        src="/uploads/${File.fileName}"
+        style="
+          max-height: 500px;
+          max-width: 500px;
+          height: auto;
+          width: auto;
+        "
+      />`
+      break
+
+    case 'audio':
+      filePart = `<audio controls>
+        <source src="/uploads/${File.fileName}" type="${File.mimeType}">
+      </audio>`
+      break
+
+    default:
+      filePart = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)` + text ? ` - ` : ''
+      break
+  }
   if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
     commentedDisplay = "d-flex"
     commentedText = repliedTo.text ? repliedTo.text : repliedTo.File.originalName
     commentedSender = repliedTo.sender.name
   }
-  if (FileId) fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>) - `
   const item = `<div class="chat-reciever-container" id="message-${messageId}">
     <div
       class="commented-text p-1 ${commentedDisplay}"
@@ -539,11 +583,12 @@ const generateOthersFileMsg = message => {
       <div
         class="d-flex justify-content-start align-items-center px-2 my-1"
       >
+        ${filePart}
         <p
           class="message-text ms-2 mb-0"
           id="yourMsg-${messageId}"      
         >
-          ${fileLink}<span id="msgText-${messageId}">${text}</span>
+          <span id="msgText-${messageId}">${text}</span>
         </p>
       </div>
       <div
@@ -851,7 +896,7 @@ socket.on('newFileMessage', message => {
 socket.on('roomData', data => {
   const { Messages, Users } = data
   state.roomUsers = Users
-  for (let message of Messages) {
+  for (let message of Messages.reverse()) {
     if (message.senderId.toString() === userId) {
       if (message.FileId)
         generateOwnFileMsg(message)
@@ -1127,6 +1172,11 @@ inputForm.onsubmit = e => {
   e.preventDefault()
   sendButton.click()
 }
+
+// msgListSection.addEventListener("scroll", e => {
+//   if (e.target.scrollTop === 0)
+//     console.log(111111111111)
+// })
 
 // fileUploadButton.addEventListener("click", function () {
 //   if (microphoneBtn.classList.contains("notclicked")) {

@@ -142,7 +142,7 @@ io.on("connection", async socket => {
     })
 
     socket.on("roomData", async roomId => {
-      const room = await Room.findOne({
+      let room = await Room.findOne({
         where: { id: roomId },
         include: [
           {
@@ -184,9 +184,10 @@ io.on("connection", async socket => {
             raw: true
           }
         ],
-        order: [[{ model: Message }, 'id', 'ASC']],
+        order: [[{ model: Message }, 'id', 'DESC']],
       })
-
+      room = await room.get({ plain: true })
+      // room.Messages = room.Messages.slice(0, 10)
       socket.emit('roomData', room)
     })
 
