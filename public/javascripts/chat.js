@@ -328,7 +328,10 @@ const generateOwnFileMsg = message => {
   let commentedDisplay = ''
   let commentedText = ''
   let commentedSender = ''
-  let fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)` + text ? ` - ` : ''
+  let filePart
+  let fileLink
+  if (FileId) fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>) - `
+  // if (File.)
   if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
     commentedDisplay = "d-flex"
     commentedText = repliedTo.text ? repliedTo.text : repliedTo.File.originalName
@@ -827,6 +830,7 @@ socket.on('newTextMessage', message => {
 
 socket.on('newFileMessage', message => {
   const { text, RoomId, senderId, repliedTo, createdAt, File } = message
+  console.log(File)
   if (state.currentRoom === RoomId) {
     if (senderId.toString() === userId) generateOwnFileMsg(message)
     else {
@@ -848,8 +852,18 @@ socket.on('roomData', data => {
   const { Messages, Users } = data
   state.roomUsers = Users
   for (let message of Messages) {
-    if (message.senderId.toString() === userId) generateOwnTextMsg(message)
-    else generateOthersTextMsg(message)
+    if (message.senderId.toString() === userId) {
+      if (message.FileId)
+        generateOwnFileMsg(message)
+      else
+        generateOwnTextMsg(message)
+    }
+    else {
+      if (message.FileId)
+        generateOthersFileMsg(message)
+      else
+        generateOthersTextMsg(message)
+    }
   }
   msgListSection.scrollTo(0, messageList.scrollHeight)
   socket.emit('seen', state.currentRoom)
