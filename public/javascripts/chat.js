@@ -971,7 +971,7 @@ sendButton.onclick = e => {
       case 'upload-finished':
         socket.emit('newFileMessage', {
           roomId: state.currentRoom,
-          file: state.uploadingFile
+          fileInfo: state.uploadingFile
         })
 
         fileUploadBox.style.display = "none"
