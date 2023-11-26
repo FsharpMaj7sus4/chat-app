@@ -120,10 +120,10 @@ const getRepliedMessage = async repliedToId => {
       model: User,
       as: 'sender',
       attributes: ['name'],
-      include: {
-        model: File,
-        attributes: ['originalName', 'fileName', 'size', 'mimeType']
-      }
+    },
+    {
+      model: File,
+      attributes: ['originalName', 'fileName', 'size', 'mimeType']
     }],
     attributes: ['text'],
   })
