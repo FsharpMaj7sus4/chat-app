@@ -1,6 +1,7 @@
 const sendButton = document.getElementById('sendButton')
 const input = document.getElementById('input')
 const inputForm = document.getElementById('inputForm')
+const currentRoomName = document.getElementById('currentRoomName')
 const messageList = document.getElementById("messageList")
 const chatList = document.getElementById("chat-list")
 const editingMsg = document.querySelector("#editingMsg")
@@ -694,18 +695,20 @@ const onUploadProgress = () => {
   progressBarElement.style.width = percentage + "%";
 }
 
-const pvNameHandler = name => {
-  const names = name.split('|#|')
-  if (names[0] === userName)
-    return names[1]
-  else
-    return names[0]
+const roomNameHandler = name => {
+  if (name.includes('|#|')) {
+    const names = name.split('|#|')
+    if (names[0] === userName)
+      return names[1]
+    else
+      return names[0]
+  } else
+    return name
 }
 
 const handleNewRoom = newRoom => {
   let { id, name } = newRoom
-  if (name.includes('|#|'))
-    name = pvNameHandler(name)
+  name = roomNameHandler(name)
   state.userRooms.push({ id, name })
 
   const msgPreviewSender = ''
@@ -796,14 +799,7 @@ socket.on("allMyRooms", rooms => {
       else if (!room.lastMessage.text && room.lastMessage.file) msgPreview = room.lastMessage.file
       else msgPreview = `(File) ${room.lastMessage.text}`
     }
-    let roomName
-    if (room.name.includes('|#|')) {
-      const names = room.name.split('|#|')
-      if (names[0] === userName)
-        roomName = names[1]
-      else
-        roomName = names[0]
-    } else roomName = room.name
+    const roomName = roomNameHandler(room.name)
     const item = `
     <li
       id="room-${room.id}" 
@@ -895,6 +891,7 @@ socket.on('newFileMessage', message => {
 
 socket.on('roomData', data => {
   const { Messages, Users } = data
+  currentRoomName.innerText = roomNameHandler(data.name)
   state.roomUsers = Users
   for (let message of Messages.reverse()) {
     if (message.senderId.toString() === userId) {
