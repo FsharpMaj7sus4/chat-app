@@ -51,19 +51,288 @@ let state = {
 }
 
 const generateOwnTextMsg = message => {
-  const { text, repliedTo, isSeen, FileId, File } = message
+  const { text, repliedTo, isSeen } = message
   const messageId = message.id
   let commentedDisplay = ''
   let commentedText = ''
   let commentedSender = ''
-  let fileLink = ''
   if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
     commentedDisplay = "d-flex"
     commentedText = repliedTo.text ? repliedTo.text : repliedTo.File.originalName
     commentedSender = repliedTo.sender.name
   }
-  if (FileId) {
-    fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>) - `
+  const item = `<div class="chat-transmiter-container" id="message-${messageId}">
+    <div
+      class="commented-text p-1 ${commentedDisplay}"
+      id="commented-${messageId}"
+    >
+    ${commentedSender}: ${commentedText}
+    </div>
+    <div class="chat-transmiter" id="chatTransmiter-${messageId}">
+      <div
+        class="d-flex justify-content-start align-items-center px-2 mb-1"
+      >
+        <img
+          class="rounded-circle me-2"
+          width="20px"
+          height="20px"
+          src="/images/user-img.webp"
+          alt=""
+        />
+        <small id="sender-${messageId}" class="text-secondary mx-2">شما</small>
+        <a
+          class="rounded-circle bg-success me-2 edit-user"
+          id="editBtn-${messageId}"
+          ><i class="bi bi-pencil d-flex text-white"></i
+        ></a>
+        <div
+          class="justify-content-start align-items-center editing-div animate__animated animate__bounceInRight"
+          id="editDiv-${messageId}"
+        >
+          <a
+            class="mx-1 text-decoration-none px-2 me-2 rounded-pill"
+            id="msgEdit-${messageId}"
+            href="#"
+            >ویرایش</a
+          >
+          <a
+            class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
+            id="msgComment-${messageId}"
+            href="#"
+            >پاسخ</a
+          >
+          <a
+            class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
+            id="msgDelete-${messageId}"
+            href="#"
+            >حذف</a
+          >
+          <button
+            class="btn-close"
+            id="editClose-${messageId}"
+            style="font-size: 10px"
+          ></button>
+        </div>
+      </div>
+      <div
+        class="d-flex justify-content-start align-items-start flex-nowrap px-2 my-1"
+      >
+        <span><i class="bi ${isSeen ? "bi-check-all" : "bi-check"} d-flex fs-5"></i></span>
+        <p
+          class="message-text ms-2 mb-0"
+          id="yourMsg-${messageId}"
+        >
+          <span id="msgText-${messageId}">${text}</span>
+        </p>
+      </div>
+      <div
+        class="d-flex justify-content-start align-items-center px-2 mt-1"
+      >
+        <small class="dateTime-text text-secondary me-2">05/11</small>
+        <small class="dateTime-text text-secondary">06:13</small>
+      </div>
+    </div>
+  </div>`
+
+
+  messageList.insertAdjacentHTML("beforeend", item)
+  msgListSection.scrollTo(0, messageList.scrollHeight)
+
+  const commented = document.querySelector(`#commented-${messageId}`)
+  const msgComment = document.querySelector(`#msgComment-${messageId}`)
+  const msgDelete = document.querySelector(`#msgDelete-${messageId}`)
+  const msgEdit = document.querySelector(`#msgEdit-${messageId}`)
+  const editDiv = document.querySelector(`#editDiv-${messageId}`)
+  const editDivStyle = window.getComputedStyle(editDiv)
+  const editBtn = document.querySelector(`#editBtn-${messageId}`)
+  const editClose = document.querySelector(`#editClose-${messageId}`)
+  const chatTransmiter = document.querySelector(`#chatTransmiter-${messageId}`)
+  const yourMsg = document.querySelector(`#yourMsg-${messageId}`)
+  const senderName = document.getElementById(`sender-${messageId}`)
+  const msgText = document.getElementById(`msgText-${messageId}`)
+
+  msgDelete.onclick = () => {
+    socket.emit('deleteMessage', { messageId, roomId: state.currentRoom })
+  }
+
+  msgComment.onclick = () => {
+    if ((commentMsgStyle.getPropertyValue('display') === "none")) {
+      commentMsg.style.display = "flex"
+    }
+    if ((editingMsgStyle.getPropertyValue('display') === "flex")) {
+      editingMsg.style.display = "none"
+      input.value = ''
+      state.editing = 0
+    } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
+      cancelUploading()
+    cmntText.value = yourMsg.innerText.trim()
+    input.focus()
+    commentedName.innerHTML = `${senderName.innerHTML}:`
+
+    state.currentAction = 'reply'
+    state.repliedTo = messageId
+  }
+
+  msgEdit.onclick = () => {
+    if ((editingMsgStyle.getPropertyValue('display') === "none")) {
+      editingMsg.style.display = "flex"
+    }
+    if ((commentMsgStyle.getPropertyValue('display') === "flex")) {
+      commentMsg.style.display = "none"
+      state.repliedTo = 0
+    } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
+      cancelUploading()
+    editText.value = yourMsg.innerText.trim()
+    input.value = msgText.innerText.trim()
+    input.focus()
+
+    state.currentAction = 'edit'
+    state.editing = messageId
+  }
+
+  editBtn.onclick = () => {
+    if (editDivStyle.getPropertyValue('display') === "none")
+      editDiv.style.display = "flex"
+    chatTransmiter.style.maxWidth = "100%"
+  }
+
+  editClose.onclick = () => {
+    if (editDivStyle.getPropertyValue('display') === "flex")
+      editDiv.style.display = "none"
+    chatTransmiter.style.maxWidth = "90%"
+  }
+}
+
+const generateOthersTextMsg = message => {
+  const { text, RoomId, senderId, repliedTo, createdAt, sender } = message
+  const messageId = message.id
+  let commentedDisplay = ''
+  let commentedText = ''
+  let commentedSender = ''
+  if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
+    commentedDisplay = "d-flex"
+    commentedText = repliedTo.text ? repliedTo.text : repliedTo.File.originalName
+    commentedSender = repliedTo.sender.name
+  }
+  const item = `<div class="chat-reciever-container" id="message-${messageId}">
+    <div
+      class="commented-text p-1 ${commentedDisplay}"
+      id="commented-${messageId}"
+    >
+    ${commentedSender}: ${commentedText}
+    </div>
+    <div class="chat-reciever" id="chatReciever-${messageId}">
+      <div class="d-flex justify-content-end align-items-center mb-1">
+        <a
+          class="rounded-circle bg-success me-2 edit-user"
+          id="editBtn-${messageId}"
+          ><i class="bi bi-pencil d-flex text-white"></i
+        ></a>
+        <div
+          class="justify-content-start align-items-center editing-div animate__animated animate__bounceInLeft"
+          id="editDiv-${messageId}"
+        >
+        <a
+          class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
+          id="msgComment-${messageId}"
+          href="#"
+          >پاسخ</a
+        >
+          <button
+            class="btn-close"
+            id="editClose-${messageId}"
+            style="font-size: 10px"
+          ></button>
+        </div>  
+        <a
+          id="sender-${messageId}"
+          href="#"
+          class="text-secondary reciever-name text-decoration-none mx-2"
+          >${sender.name}</a
+        >
+        <img
+          class="rounded-circle"
+          width="20px"
+          height="20px"
+          src="/images/user-img.webp"
+          alt=""
+        />
+      </div>
+      <div
+        class="d-flex justify-content-start align-items-center px-2 my-1"
+      >
+        <p
+          class="message-text ms-2 mb-0"
+          id="yourMsg-${messageId}"      
+        >
+          <span id="msgText-${messageId}">${text}</span>
+        </p>
+      </div>
+      <div
+        class="d-flex justify-content-end align-items-center px-2 mt-1"
+      >
+        <small class="dateTime-text text-secondary">05/11</small>
+        <small class="dateTime-text text-secondary ms-2">06:13</small>
+      </div>
+    </div>
+  </div>`
+
+  messageList.insertAdjacentHTML("beforeend", item)
+  msgListSection.scrollTo(0, messageList.scrollHeight)
+
+  const commented = document.querySelector(`#commented-${messageId}`)
+  const msgComment = document.querySelector(`#msgComment-${messageId}`)
+  const msgCommentStyle = window.getComputedStyle(msgComment)
+  const editDiv = document.querySelector(`#editDiv-${messageId}`)
+  const editClose = document.querySelector(`#editClose-${messageId}`)
+  const chatReciever = document.querySelector(`#chatReciever-${messageId}`)
+  const editBtn = document.querySelector(`#editBtn-${messageId}`)
+  const yourMsg = document.querySelector(`#yourMsg-${messageId}`)
+  const msgText = document.getElementById(`msgText-${messageId}`)
+
+  // const senderName = document.getElementById(`sender-${messageId}`)
+
+  msgComment.onclick = () => {
+    if ((commentMsgStyle.getPropertyValue('display') === "none")) {
+      commentMsg.style.display = "flex"
+    }
+    if ((editingMsgStyle.getPropertyValue('display') === "flex")) {
+      editingMsg.style.display = "none"
+      input.value = ''
+
+      state.editing = 0
+    } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
+      cancelUploading()
+    commentedName.innerHTML = sender.name
+    cmntText.value = yourMsg.innerHTML.trim()
+    input.focus()
+
+    state.currentAction = 'reply'
+    state.repliedTo = messageId
+  }
+
+  editBtn.onclick = () => {
+    editDiv.style.display = "flex"
+    chatReciever.style.maxWidth = "100%"
+  }
+
+  editClose.onclick = () => {
+    editDiv.style.display = "none"
+    chatReciever.style.maxWidth = "90%"
+  }
+}
+
+const generateOwnFileMsg = message => {
+  const { text, repliedTo, isSeen, FileId, File } = message
+  const messageId = message.id
+  let commentedDisplay = ''
+  let commentedText = ''
+  let commentedSender = ''
+  let fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)` + text ? ` - ` : ''
+  if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
+    commentedDisplay = "d-flex"
+    commentedText = repliedTo.text ? repliedTo.text : repliedTo.File.originalName
+    commentedSender = repliedTo.sender.name
   }
   const item = `<div class="chat-transmiter-container" id="message-${messageId}">
     <div
@@ -165,9 +434,8 @@ const generateOwnTextMsg = message => {
     }
     if ((editingMsgStyle.getPropertyValue('display') === "flex")) {
       editingMsg.style.display = "none"
-      state.editing = '0'
-      input.value = ''
       state.editing = 0
+      input.value = ''
     } else if (state.currentAction === 'uploading' || state.currentAction === 'upload-finished')
       cancelUploading()
     cmntText.value = yourMsg.innerText.trim()
@@ -208,8 +476,8 @@ const generateOwnTextMsg = message => {
   }
 }
 
-const generateOthersTextMsg = message => {
-  const { text, RoomId, senderId, repliedTo, createdAt, sender, File, FileId } = message
+const generateOthersFileMsg = message => {
+  const { text, RoomId, senderId, repliedTo, createdAt, sender, FileId, File } = message
   const messageId = message.id
   let commentedDisplay = ''
   let commentedText = ''
@@ -560,9 +828,9 @@ socket.on('newTextMessage', message => {
 socket.on('newFileMessage', message => {
   const { text, RoomId, senderId, repliedTo, createdAt, File } = message
   if (state.currentRoom === RoomId) {
-    if (senderId.toString() === userId) generateOwnTextMsg(message)
+    if (senderId.toString() === userId) generateOwnFileMsg(message)
     else {
-      generateOthersTextMsg(message)
+      generateOthersFileMsg(message)
       socket.emit('seen', state.currentRoom)
     }
   } else {
