@@ -367,62 +367,64 @@ const generateOwnFileMsg = message => {
     ${commentedSender}: ${commentedText}
     </div>
     <div class="chat-transmiter" id="chatTransmiter-${messageId}">
-      <div
-        class="d-flex justify-content-start align-items-center px-2 mb-1"
-      >
-        <img
-          class="rounded-circle me-2"
-          width="20px"
-          height="20px"
-          src="/images/user-img.webp"
-          alt=""
-        />
-        <small id="sender-${messageId}" class="text-secondary mx-2">شما</small>
-        <a
-          class="rounded-circle bg-success me-2 edit-user"
-          id="editBtn-${messageId}"
-          ><i class="bi bi-pencil d-flex text-white"></i
-        ></a>
+      <div class="d-flex flex-column">
         <div
-          class="justify-content-start align-items-center editing-div animate__animated animate__bounceInRight"
-          id="editDiv-${messageId}"
+          class="d-flex justify-content-start align-items-center px-2 mb-1"
         >
+          <img
+            class="rounded-circle me-2"
+            width="20px"
+            height="20px"
+            src="/images/user-img.webp"
+            alt=""
+          />
+          <small id="sender-${messageId}" class="text-secondary mx-2">شما</small>
           <a
-            class="mx-1 text-decoration-none px-2 me-2 rounded-pill"
-            id="msgEdit-${messageId}"
-            href="#"
-            >ویرایش</a
+            class="rounded-circle bg-success me-2 edit-user"
+            id="editBtn-${messageId}"
+            ><i class="bi bi-pencil d-flex text-white"></i
+          ></a>
+          <div
+            class="justify-content-start align-items-center editing-div animate__animated animate__bounceInRight"
+            id="editDiv-${messageId}"
           >
-          <a
-            class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
-            id="msgComment-${messageId}"
-            href="#"
-            >پاسخ</a
-          >
-          <a
-            class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
-            id="msgDelete-${messageId}"
-            href="#"
-            >حذف</a
-          >
-          <button
-            class="btn-close"
-            id="editClose-${messageId}"
-            style="font-size: 10px"
-          ></button>
+            <a
+              class="mx-1 text-decoration-none px-2 me-2 rounded-pill"
+              id="msgEdit-${messageId}"
+              href="#"
+              >ویرایش</a
+            >
+            <a
+              class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
+              id="msgComment-${messageId}"
+              href="#"
+              >پاسخ</a
+            >
+            <a
+              class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
+              id="msgDelete-${messageId}"
+              href="#"
+              >حذف</a
+            >
+            <button
+              class="btn-close"
+              id="editClose-${messageId}"
+              style="font-size: 10px"
+            ></button>
+          </div>
         </div>
-      </div>
-      <div
-        class="d-flex justify-content-start align-items-start flex-nowrap px-2 my-1"
-      >
         ${filePart}
-        <p
-          class="message-text ms-2 mb-0"
-          id="yourMsg-${messageId}"
+        <div
+          class="d-flex justify-content-start align-items-start flex-nowrap px-2 my-1"
         >
-          <i class="bi ${isSeen ? "bi-check-all" : "bi-check"} d-flex fs-5"></i>
-          <span id="msgText-${messageId}">${text}</span>
-        </p>
+          <span><i class="bi ${isSeen ? "bi-check-all" : "bi-check"} d-flex fs-5"></i></span>
+          <p
+            class="message-text ms-2 mb-0"
+            id="yourMsg-${messageId}"
+          >
+            <span id="msgText-${messageId}">${text}</span>
+          </p>
+        </div>
       </div>
       <div
         class="d-flex justify-content-start align-items-center px-2 mt-1"
@@ -545,58 +547,60 @@ const generateOthersFileMsg = message => {
     ${commentedSender}: ${commentedText}
     </div>
     <div class="chat-reciever" id="chatReciever-${messageId}">
-      <div class="d-flex justify-content-end align-items-center mb-1">
-        <a
-          class="rounded-circle bg-success me-2 edit-user"
-          id="editBtn-${messageId}"
-          ><i class="bi bi-pencil d-flex text-white"></i
-        ></a>
-        <div
-          class="justify-content-start align-items-center editing-div animate__animated animate__bounceInLeft"
-          id="editDiv-${messageId}"
-        >
-        <a
-          class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
-          id="msgComment-${messageId}"
-          href="#"
-          >پاسخ</a
-        >
-          <button
-            class="btn-close"
-            id="editClose-${messageId}"
-            style="font-size: 10px"
-          ></button>
-        </div>  
-        <a
-          id="sender-${messageId}"
-          href="#"
-          class="text-secondary reciever-name text-decoration-none mx-2"
-          >${sender.name}</a
-        >
-        <img
-          class="rounded-circle"
-          width="20px"
-          height="20px"
-          src="/images/user-img.webp"
-          alt=""
-        />
-      </div>
-      <div
-        class="d-flex justify-content-start align-items-center px-2 my-1"
-      >
+      <div class="d-flex flex-column">
+        <div class="d-flex justify-content-end align-items-center mb-1">
+          <a
+            class="rounded-circle bg-success me-2 edit-user"
+            id="editBtn-${messageId}"
+            ><i class="bi bi-pencil d-flex text-white"></i
+          ></a>
+          <div
+            class="justify-content-start align-items-center editing-div animate__animated animate__bounceInLeft"
+            id="editDiv-${messageId}"
+          >
+          <a
+            class="mx-1 text-decoration-none px-2 mx-2 rounded-pill"
+            id="msgComment-${messageId}"
+            href="#"
+            >پاسخ</a
+          >
+            <button
+              class="btn-close"
+              id="editClose-${messageId}"
+              style="font-size: 10px"
+            ></button>
+          </div>  
+          <a
+            id="sender-${messageId}"
+            href="#"
+            class="text-secondary reciever-name text-decoration-none mx-2"
+            >${sender.name}</a
+          >
+          <img
+            class="rounded-circle"
+            width="20px"
+            height="20px"
+            src="/images/user-img.webp"
+            alt=""
+          />
+        </div>
         ${filePart}
-        <p
-          class="message-text ms-2 mb-0"
-          id="yourMsg-${messageId}"      
+        <div
+          class="d-flex justify-content-start align-items-center px-2 my-1"
         >
-          <span id="msgText-${messageId}">${text}</span>
-        </p>
-      </div>
-      <div
-        class="d-flex justify-content-end align-items-center px-2 mt-1"
-      >
-        <small class="dateTime-text text-secondary">05/11</small>
-        <small class="dateTime-text text-secondary ms-2">06:13</small>
+          <p
+            class="message-text ms-2 mb-0"
+            id="yourMsg-${messageId}"      
+          >
+            <span id="msgText-${messageId}">${text}</span>
+          </p>
+        </div>
+        <div
+          class="d-flex justify-content-end align-items-center px-2 mt-1"
+        >
+          <small class="dateTime-text text-secondary">05/11</small>
+          <small class="dateTime-text text-secondary ms-2">06:13</small>
+        </div>
       </div>
     </div>
   </div>`
