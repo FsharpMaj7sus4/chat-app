@@ -134,12 +134,12 @@ io.on("connection", async socket => {
   try {
     const user = await whoIs(socket)
     const roomsData = user.dataValues.Rooms.map(room => room.get({ plain: true }))
-    socket.on('allMyRooms', async () => {
-      const chatList = await makeChatListAndJoin(socket, roomsData, user.id)
-      socket.emit("allMyRooms", chatList)
-      const allUsers = await User.findAll({ raw: true })
-      socket.emit('allUsers', allUsers)
-    })
+    // socket.on('allMyRooms', async () => {
+    const chatList = await makeChatListAndJoin(socket, roomsData, user.id)
+    socket.emit("allMyRooms", chatList)
+    const allUsers = await User.findAll({ raw: true })
+    socket.emit('allUsers', allUsers)
+    // })
 
     socket.on("roomData", async roomId => {
       let room = await Room.findOne({
