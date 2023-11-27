@@ -41,7 +41,7 @@ const instance = axios.create({
 let state = {
   userRooms: [],
   currentRoom: 0,
-  allUsers: [],
+  allUsers: {},
   roomUsers: [],
   currentAction: "none", // 'none', 'reply', 'edit', 'uploading', 'upload-finished', 'new-group'
   repliedTo: 0,
@@ -323,7 +323,8 @@ const generateOwnFileMsg = message => {
   let commentedDisplay = ""
   let commentedText = ""
   let commentedSender = ""
-  let filePart
+  let filePart = ""
+  let fileLink = ""
   switch (
     File.mimeType.split("/")[0] // file extention
   ) {
@@ -346,7 +347,7 @@ const generateOwnFileMsg = message => {
       break
 
     default:
-      filePart = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)` + text ? ` - ` : ""
+      fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)${text ? ` - ` : ""}`
       break
   }
 
@@ -418,7 +419,7 @@ const generateOwnFileMsg = message => {
             class="message-text ms-2 mb-0"
             id="yourMsg-${messageId}"
           >
-            <span id="msgText-${messageId}">${text}</span>
+            ${fileLink}<span id="msgText-${messageId}">${text}</span>
           </p>
         </div>
       </div>
@@ -501,7 +502,8 @@ const generateOthersFileMsg = message => {
   let commentedDisplay = ""
   let commentedText = ""
   let commentedSender = ""
-  let filePart
+  let filePart = ""
+  let fileLink = ""
   switch (
     File.mimeType.split("/")[0] // file extention
   ) {
@@ -524,7 +526,7 @@ const generateOthersFileMsg = message => {
       break
 
     default:
-      filePart = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)` + text ? ` - ` : ""
+      fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)` + text ? ` - ` : ""
       break
   }
   if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
@@ -585,7 +587,7 @@ const generateOthersFileMsg = message => {
             class="message-text ms-2 mb-0"
             id="yourMsg-${messageId}"      
           >
-            <span id="msgText-${messageId}">${text}</span>
+            ${fileLink}span id="msgText-${messageId}">${text}</span>
           </p>
         </div>
         <div
@@ -749,12 +751,29 @@ const handleNewRoom = newRoom => {
   chatList.insertAdjacentHTML("afterbegin", item)
 }
 
-socket.once("allUsers", users => {
-  state.allUsers = users
+socket.once("allUsers", data => {
+  const { users, connectedUsers } = data
+  for (let user of users) {
+    state.allUsers[user.id] = {
+      ...user,
+      isOnline: connectedUsers.includes(user.id) ? true : false,
+    }
+  }
 })
 
 socket.on("newUser", user => {
-  state.allUsers.push(user)
+  state.allUsers[user.id] = {
+    ...user,
+    isOnline: true,
+  }
+})
+
+socket.on("userOnline", userId => {
+  state.allUsers[userId].isOnline = true
+})
+
+socket.on("userOffline", userId => {
+  state.allUsers[userId].isOnline = false
 })
 
 socket.on("newUserInRoom", user => {

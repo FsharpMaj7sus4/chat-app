@@ -122,12 +122,13 @@ const getRepliedMessage = async repliedToId => {
 io.on("connection", async socket => {
   try {
     const user = await whoIs(socket)
+    io.emit("userOnline", user.id)
     const roomsData = user.dataValues.Rooms.map(room => room.get({ plain: true }))
     // socket.on('allMyRooms', async () => {
     const chatList = await makeChatListAndJoin(socket, roomsData, user.id)
     socket.emit("allMyRooms", chatList)
     const allUsers = await User.findAll({ raw: true })
-    socket.emit("allUsers", allUsers)
+    socket.emit("allUsers", { users: allUsers, connectedUsers: Object.keys(connectedUsers) })
     // })
 
     socket.on("roomData", async roomId => {
@@ -275,6 +276,7 @@ io.on("connection", async socket => {
     })
 
     socket.on("disconnect", () => {
+      io.emit("userOffline", user.id)
       delete connectedUsers[user.id]
     })
   } catch (err) {
