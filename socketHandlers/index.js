@@ -231,7 +231,7 @@ io.on("connection", async socket => {
 
     socket.on("seen", async roomId => {
       await Message.update({ isSeen: true }, { where: { RoomId: roomId, senderId: { [Sequelize.Op.not]: user.id } } })
-      socket.to(roomId).emit("seen")
+      socket.to(roomId).emit("seen", roomId)
     })
 
     socket.on("newPvRoom", async otherUserId => {

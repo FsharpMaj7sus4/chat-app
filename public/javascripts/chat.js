@@ -910,10 +910,12 @@ socket.on("deleteMessage", data => {
   }
 })
 
-socket.on("seen", () => {
-  const unseens = document.querySelectorAll(".bi-check")
-  for (unseenMsg of unseens) {
-    unseenMsg.classList.replace("bi-check", "bi-check-all")
+socket.on("seen", roomId => {
+  if (state.currentRoom === roomId) {
+    const unseens = document.querySelectorAll(".bi-check")
+    for (unseenMsg of unseens) {
+      unseenMsg.classList.replace("bi-check", "bi-check-all")
+    }
   }
 })
 
