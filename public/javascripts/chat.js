@@ -759,7 +759,7 @@ const handleNewRoom = newRoom => {
   chatList.insertAdjacentHTML("afterbegin", item)
 }
 
-socket.on('allUsers', users => {
+socket.once('allUsers', users => {
   state.allUsers = users
 })
 
@@ -782,7 +782,7 @@ socket.on("createdNewRoom", data => {
   selectChat(room.id)
 })
 
-socket.on("allMyRooms", rooms => {
+socket.once("allMyRooms", rooms => {
   state.userRooms = rooms
   for (let room of rooms) {
     let msgPreviewSender
