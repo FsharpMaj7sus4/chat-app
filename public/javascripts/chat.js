@@ -802,7 +802,6 @@ socket.on("createdNewRoom", data => {
 
 socket.once("allUsers&MyRooms", data => {
   const { rooms, users, connectedUsers } = data
-  console.log(connectedUsers)
   for (let user of users) {
     state.allUsers[user.id] = {
       ...user,
