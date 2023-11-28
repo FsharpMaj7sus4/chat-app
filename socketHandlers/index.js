@@ -122,13 +122,16 @@ const getRepliedMessage = async repliedToId => {
 io.on("connection", async socket => {
   try {
     const user = await whoIs(socket)
-    io.emit("userOnline", user.id)
     const roomsData = user.dataValues.Rooms.map(room => room.get({ plain: true }))
     // socket.on('allMyRooms', async () => {
     const chatList = await makeChatListAndJoin(socket, roomsData, user.id)
-    socket.emit("allMyRooms", chatList)
     const allUsers = await User.findAll({ raw: true })
-    socket.emit("allUsers", { users: allUsers, connectedUsers: Object.keys(connectedUsers) })
+    socket.emit("allUsers&MyRooms", {
+      rooms: chatList,
+      users: allUsers,
+      connectedUsers: Object.keys(connectedUsers),
+    })
+    io.emit("userOnline", user.id)
     // })
 
     socket.on("roomData", async roomId => {
@@ -237,7 +240,7 @@ io.on("connection", async socket => {
 
     socket.on("newPvRoom", async otherUserId => {
       const otherUser = await User.findByPk(otherUserId)
-      const roomName = user.name > otherUser.name ? `${user.name}|#|${otherUser.name}` : `${otherUser.name}|#|${user.name}`
+      const roomName = user.id > otherUserId ? `${user.id}|#|${otherUserId}` : `${otherUserId}|#|${user.id}`
       const [newRoom, created] = await Room.findOrCreate({ where: { name: roomName } })
       if (created) {
         await newRoom.setUsers([user, otherUser])

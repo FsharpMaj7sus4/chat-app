@@ -690,17 +690,32 @@ const onUploadProgress = () => {
   progressBarElement.style.width = percentage + "%"
 }
 
-const roomNameHandler = name => {
-  if (name.includes("|#|")) {
-    const names = name.split("|#|")
-    if (names[0] === userName) return names[1]
-    else return names[0]
-  } else return name
+const pvRoomDataHandler = roomName => {
+  let ids = roomName.split("|#|")
+  ids = ids.map(id => Number(id))
+  if (ids[0] === userId) {
+    return {
+      pvUserName: state.allUsers[ids[1]].name,
+      pvUserId: ids[1],
+    }
+  } else
+    return {
+      pvUserName: state.allUsers[ids[0]].name,
+      pvUserId: ids[0],
+    }
 }
 
 const handleNewRoom = newRoom => {
   let { id, name } = newRoom
-  name = roomNameHandler(name)
+  let onlineStatus = ""
+  if (name.includes("|#|")) {
+    const { pvUserName, pvUserId } = pvRoomDataHandler(name)
+    name = pvUserName
+    onlineStatus = `<div 
+      class="user-status-div ${state.allUsers[pvUserId].isOnline ? "user-online" : ""}" 
+      id="onlineStatus-${pvUserId}"
+    ></div>`
+  }
   state.userRooms.push({ id, name })
 
   const msgPreviewSender = ""
@@ -717,7 +732,7 @@ const handleNewRoom = newRoom => {
           <img src="/images/user-img.webp" alt="" style="
             width: 70px;
           ">
-          <div class="user-status-div"></div>
+          ${onlineStatus}
         </div>
         <div class="user-msg mx-3" style='width: calc(100% - 100px);'>
           <div class="user-name">
@@ -751,16 +766,6 @@ const handleNewRoom = newRoom => {
   chatList.insertAdjacentHTML("afterbegin", item)
 }
 
-socket.once("allUsers", data => {
-  const { users, connectedUsers } = data
-  for (let user of users) {
-    state.allUsers[user.id] = {
-      ...user,
-      isOnline: connectedUsers.includes(user.id) ? true : false,
-    }
-  }
-})
-
 socket.on("newUser", user => {
   state.allUsers[user.id] = {
     ...user,
@@ -769,11 +774,15 @@ socket.on("newUser", user => {
 })
 
 socket.on("userOnline", userId => {
-  state.allUsers[userId].isOnline = true
+  state.allUsers[userId] ? (state.allUsers[userId].isOnline = true) : 0
+  const userOnlineStatus = document.getElementById(`onlineStatus-${userId}`)
+  userOnlineStatus ? userOnlineStatus.classList.add("user-online") : 0
 })
 
 socket.on("userOffline", userId => {
-  state.allUsers[userId].isOnline = false
+  state.allUsers[userId] ? (state.allUsers[userId].isOnline = false) : 0
+  const userOnlineStatus = document.getElementById(`onlineStatus-${userId}`)
+  userOnlineStatus ? userOnlineStatus.classList.remove("user-online") : 0
 })
 
 socket.on("newUserInRoom", user => {
@@ -791,7 +800,15 @@ socket.on("createdNewRoom", data => {
   selectChat(room.id)
 })
 
-socket.once("allMyRooms", rooms => {
+socket.once("allUsers&MyRooms", data => {
+  const { rooms, users, connectedUsers } = data
+  console.log(connectedUsers)
+  for (let user of users) {
+    state.allUsers[user.id] = {
+      ...user,
+      isOnline: connectedUsers.includes(user.id.toString()) ? true : false,
+    }
+  }
   state.userRooms = rooms
   for (let room of rooms) {
     let msgPreviewSender
@@ -808,7 +825,16 @@ socket.once("allMyRooms", rooms => {
       else if (!room.lastMessage.text && room.lastMessage.file) msgPreview = room.lastMessage.file
       else msgPreview = `(File) ${room.lastMessage.text}`
     }
-    const roomName = roomNameHandler(room.name)
+    let roomName = room.name
+    let onlineStatus = ""
+    if (roomName.includes("|#|")) {
+      const { pvUserName, pvUserId } = pvRoomDataHandler(roomName)
+      roomName = pvUserName
+      onlineStatus = `<div 
+        class="user-status-div ${state.allUsers[pvUserId].isOnline ? "user-online" : ""}" 
+        id="onlineStatus-${pvUserId}"
+      ></div>`
+    }
     const item = `
     <li
       id="room-${room.id}" 
@@ -823,7 +849,7 @@ socket.once("allMyRooms", rooms => {
           <img src="/images/user-img.webp" alt="" style="
             width: 70px;
           ">
-          <div class="user-status-div"></div>
+          ${onlineStatus}
         </div>
         <div class="user-msg mx-3" style='width: calc(100% - 100px);'>
           <div class="user-name">
@@ -862,7 +888,7 @@ socket.once("allMyRooms", rooms => {
 socket.on("newTextMessage", message => {
   const { text, RoomId, senderId, repliedTo, createdAt } = message
   if (state.currentRoom === RoomId) {
-    if (senderId.toString() === userId) generateOwnTextMsg(message)
+    if (senderId === userId) generateOwnTextMsg(message)
     else {
       generateOthersTextMsg(message)
       socket.emit("seen", state.currentRoom)
@@ -882,7 +908,7 @@ socket.on("newFileMessage", message => {
   const { text, RoomId, senderId, repliedTo, createdAt, File } = message
   console.log(File)
   if (state.currentRoom === RoomId) {
-    if (senderId.toString() === userId) generateOwnFileMsg(message)
+    if (senderId === userId) generateOwnFileMsg(message)
     else {
       generateOthersFileMsg(message)
       socket.emit("seen", state.currentRoom)
@@ -900,10 +926,15 @@ socket.on("newFileMessage", message => {
 
 socket.on("roomData", data => {
   const { Messages, Users } = data
-  currentRoomName.innerText = roomNameHandler(data.name)
+  let roomName = data.name
+  if (roomName.includes("|#|")) {
+    const { pvUserId, pvUserName } = pvRoomDataHandler(roomName)
+    roomName = pvUserName
+  }
+  currentRoomName.innerText = roomName
   state.roomUsers = Users
   for (let message of Messages.reverse()) {
-    if (message.senderId.toString() === userId) {
+    if (message.senderId === userId) {
       if (message.FileId) generateOwnFileMsg(message)
       else generateOwnTextMsg(message)
     } else {
@@ -1098,7 +1129,7 @@ fileUploadBoxClose.onclick = cancelUploading
 
 newRoomButton.onclick = () => {
   for (let user of Object.values(state.allUsers)) {
-    if (user.id.toString() === userId) {
+    if (user.id === userId) {
       continue
     }
     const { name, phoneNumber, id } = user
