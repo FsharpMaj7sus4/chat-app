@@ -45,10 +45,16 @@
           </a>
           <div class="header-container d-flex justify-content-between align-items-center">
             <div class="d-flex justify-content-start align-items-center">
-              <h3
-                id="currentRoomName"
-                class="fw-bold text-white"
-              ></h3>
+              <a
+                href="#"
+                onclick="showRoomUsers()"
+                class="d-flex"
+              >
+                <h3
+                  class="fw-bold text-white"
+                  id="currentRoomName"
+                ></h3>
+              </a>
               <!-- <div
 								id="onlineStatus"
 								class="user-status ms-2 rounded-circle bg-danger"
@@ -317,6 +323,95 @@
               class="btn btn-primary"
             >
               تایید
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="modal fade"
+      id="roomUsersModal"
+      tabindex="-1"
+      aria-labelledby="roomUsersModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5
+              class="modal-title"
+              id="usersModalLabel"
+            >
+              اعضای گروه:
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <ul
+              class="list-group"
+              id="roomUsersList"
+            ></ul>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button
+          onclick="showOtherUsers()"
+          type="button"
+          class="btn btn-primary"
+        >
+          افزودن عضو
+        </button>
+      </div>
+    </div>
+    <div
+      class="modal fade"
+      id="otherUsersModal"
+      tabindex="-1"
+      aria-labelledby="OtherUsersModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5
+              class="modal-title"
+              id="otherUsersModalLabel"
+            >
+              اعضای جدید گروه را انتخاب کنید:
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <ul
+              class="list-group"
+              id="otherUsersList"
+            ></ul>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              انصراف
+            </button>
+            <button
+              id="addUsersToRoom"
+              type="button"
+              class="btn btn-primary"
+            >
+              افزودن به گروه
             </button>
           </div>
         </div>
