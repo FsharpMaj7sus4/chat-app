@@ -589,7 +589,7 @@ const generateOthersFileMsg = message => {
             class="message-text ms-2 mb-0"
             id="yourMsg-${messageId}"      
           >
-            ${fileLink}span id="msgText-${messageId}">${text}</span>
+            ${fileLink}<span id="msgText-${messageId}">${text}</span>
           </p>
         </div>
         <div
