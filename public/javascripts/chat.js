@@ -1189,6 +1189,7 @@ confirmRoomName.onclick = () => {
   if (!roomName) roomNameModalMsg.innerText = "نام گروه نمی تواند خالی باشد"
   else {
     roomNameModalMsg.innerText = ""
+    newRoomNameModal.hide()
 
     socket.emit("newGpRoom", { name: roomName, userIds: state.newRoomUsers })
 
