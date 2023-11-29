@@ -29,11 +29,14 @@ const createThisNewRoom = document.getElementById("createThisNewRoom")
 const newRoomUsersModal = new bootstrap.Modal(document.querySelector("#newRoomUserSelect"))
 const newRoomNameModal = new bootstrap.Modal(document.querySelector("#newRoomNameSelect"))
 const roomUsersModal = new bootstrap.Modal(document.querySelector("#roomUsersModal"))
+const otherUsersModal = new bootstrap.Modal(document.getElementById("otherUsersModal"))
 const roomUsersList = document.getElementById("roomUsersList")
+const otherUsersList = document.getElementById("otherUsersList")
 const userSelectModalMsg = document.getElementById("userSelectModalMsg")
 const roomNameModalMsg = document.getElementById("roomNameModalMsg")
 const newRoomName = document.getElementById("newRoomName")
 const confirmRoomName = document.getElementById("confirmRoomName")
+const addUsersToRoom = document.getElementById("addUsersToRoom")
 
 const uploadController = new AbortController()
 const instance = axios.create({
@@ -804,6 +807,45 @@ const showRoomUsers = () => {
   }
   roomUsersModal.show()
 }
+
+const showOtherUsers = () => {
+  roomUsersModal.hide()
+  otherUsersList.innerHTML = ""
+  const roomUsersIds = state.roomUsers.map(({ id }) => id)
+  const otherUsers = Object.values(state.allUsers).filter(user => !roomUsersIds.includes(user.id))
+  for (let user of otherUsers) {
+    const { name, phoneNumber, id } = user
+    const item = `<li
+      class="list-group-item rounded-0 d-flex align-items-center justify-content-between"
+    >
+      <div class="custom-control custom-radio">
+        <input
+          class="custom-control-input"
+          id="otherUsers-${id}"
+          type="checkbox"
+          name="newMembers"
+        />
+        <label
+          class="custom-control-label"
+          for="otherUsers-${id}"
+        >
+          <p class="mb-0" id="user-name${id}">${name}</p>
+          <span class="small font-italic text-muted">${phoneNumber}</span>
+        </label>
+      </div>
+      <label for="otherUsers-${id}"
+        ><img
+          src="/images/user-img.webp"
+          alt=""
+          width="60"
+      /></label>
+    </li>`
+    otherUsersList.insertAdjacentHTML("beforeend", item)
+    otherUsersList.scrollTop = 0
+  }
+  otherUsersModal.show()
+}
+
 socket.on("newUser", user => {
   state.allUsers[user.id] = {
     ...user,
@@ -823,8 +865,10 @@ socket.on("userOffline", userId => {
   userOnlineStatus ? userOnlineStatus.classList.remove("user-online") : 0
 })
 
-socket.on("newUserInRoom", user => {
-  state.roomUsers.push(user)
+socket.on("newUsersInRoom", data => {
+  console.log(data)
+  const { users, roomId } = data
+  if (roomId === state.currentRoom) state.roomUsers.push(...users)
 })
 
 socket.on("addedToNewRoom", handleNewRoom)
@@ -1239,6 +1283,14 @@ confirmRoomName.onclick = () => {
 inputForm.onsubmit = e => {
   e.preventDefault()
   sendButton.click()
+}
+
+addUsersToRoom.onclick = () => {
+  const checkedBoxes = document.querySelectorAll('input[name="newMembers"]:checked')
+  const newMemberIds = Array.from(checkedBoxes).map(box => Number(box.id.substring(11))) // otherUsers-${id}
+  otherUsersModal.hide()
+  otherUsersList.innerHTML = ""
+  socket.emit("addUsersToRoom", { newMemberIds, roomId: state.currentRoom })
 }
 
 // msgListSection.addEventListener("scroll", e => {

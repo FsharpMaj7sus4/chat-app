@@ -28,7 +28,7 @@ const whoIs = async socket => {
     },
     include: {
       model: Room,
-      attributes: ["name", "id"],
+      attributes: ["name", "id", "createdAt"],
       through: {
         attributes: [],
       },
@@ -91,7 +91,7 @@ const makeChatListAndJoin = async (socket, roomsData, userId) => {
     raw: true,
   })
 
-  const chatList = roomsData.map(room => {
+  let chatList = roomsData.map(room => {
     room.lastMessage = lastMessages.find(msg => msg.RoomId === room.id)
     const unreadCount = unreadCountList.find(msgCount => msgCount.RoomId === room.id)
     room.messageCount = unreadCount ? unreadCount.count : 0
@@ -283,6 +283,31 @@ io.on("connection", async socket => {
       }
       socket.join(newRoom.id)
       socket.emit("createdNewRoom", { room: newRoom, isNew: true })
+    })
+
+    socket.on("addUsersToRoom", async data => {
+      const { newMemberIds, roomId } = data
+      const room = await Room.findByPk(roomId)
+      let users = await User.findAll({
+        where: {
+          id: {
+            [Sequelize.Op.in]: newMemberIds,
+          },
+        },
+      })
+      await room.addUsers(users)
+
+      for (let userId of newMemberIds) {
+        if (connectedUsers[userId]) {
+          io.sockets.sockets.get(connectedUsers[userId]).join(roomId)
+          io.to(connectedUsers[userId]).emit("addedToNewRoom", room)
+        }
+      }
+      users = await users.map(user => {
+        const plainUser = user.get({ plain: true })
+        return plainUser
+      })
+      io.to(roomId).emit("newUsersInRoom", { roomId, users })
     })
 
     socket.on("disconnect", () => {
