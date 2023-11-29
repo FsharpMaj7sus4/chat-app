@@ -28,6 +28,8 @@ const allUsersList = document.getElementById("allUsersList")
 const createThisNewRoom = document.getElementById("createThisNewRoom")
 const newRoomUsersModal = new bootstrap.Modal(document.querySelector("#newRoomUserSelect"))
 const newRoomNameModal = new bootstrap.Modal(document.querySelector("#newRoomNameSelect"))
+const roomUsersModal = new bootstrap.Modal(document.querySelector("#roomUsersModal"))
+const roomUsersList = document.getElementById("roomUsersList")
 const userSelectModalMsg = document.getElementById("userSelectModalMsg")
 const roomNameModalMsg = document.getElementById("roomNameModalMsg")
 const newRoomName = document.getElementById("newRoomName")
@@ -766,6 +768,39 @@ const handleNewRoom = newRoom => {
   chatList.insertAdjacentHTML("afterbegin", item)
 }
 
+const showRoomUsers = () => {
+  roomUsersList.innerHTML = ""
+  for (let user of state.roomUsers) {
+    const { name, phoneNumber, id } = user
+    const item = `<li
+      class="list-group-item rounded-0 d-flex align-items-center justify-content-between"
+    >
+      <div class="custom-control custom-radio">
+        <input
+          class="custom-control-input d-none"
+          id="roomUser-${id}"
+          type="checkbox"
+        />
+        <label
+          class="custom-control-label"
+          for="roomUser-${id}"
+        >
+          <p class="mb-0" id="user-name${id}">${name}</p>
+          <span class="small font-italic text-muted">${phoneNumber}</span>
+        </label>
+      </div>
+      <label for="roomUser-${id}"
+        ><img
+          src="/images/user-img.webp"
+          alt=""
+          width="60"
+      /></label>
+    </li>`
+    roomUsersList.insertAdjacentHTML("beforeend", item)
+    roomUsersList.scrollTop = 0
+  }
+  roomUsersModal.show()
+}
 socket.on("newUser", user => {
   state.allUsers[user.id] = {
     ...user,
