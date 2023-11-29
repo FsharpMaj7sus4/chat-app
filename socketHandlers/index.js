@@ -248,18 +248,18 @@ io.on("connection", async socket => {
     socket.on("newPvRoom", async otherUserId => {
       const otherUser = await User.findByPk(otherUserId)
       const roomName = user.id > otherUserId ? `${user.id}|#|${otherUserId}` : `${otherUserId}|#|${user.id}`
-      const [newRoom, created] = await Room.findOrCreate({ where: { name: roomName } })
+      const [room, created] = await Room.findOrCreate({ where: { name: roomName } })
       if (created) {
-        await newRoom.setUsers([user, otherUser])
+        await room.setUsers([user, otherUser])
 
         if (connectedUsers[otherUserId]) {
-          io.sockets.connected[connectedUsers[otherUserId]].join(newRoom.id)
-          io.to(connectedUsers[otherUserId]).emit("addedToNewRoom", newRoom)
+          io.sockets.connected[connectedUsers[otherUserId]].join(room.id)
+          io.to(connectedUsers[otherUserId]).emit("addedToNewRoom", room)
         }
-        socket.join(newRoom.id)
-        socket.emit("createdNewRoom", { room: newRoom, isNew: true })
+        socket.join(room.id)
+        socket.emit("createdNewRoom", { room, isNew: true })
       } else {
-        socket.emit("createdNewRoom", { room: newRoom, isNew: false })
+        socket.emit("createdNewRoom", { room, isNew: false })
       }
     })
 
