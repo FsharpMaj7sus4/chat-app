@@ -266,13 +266,14 @@ io.on("connection", async socket => {
     socket.on("newGpRoom", async roomData => {
       const { name, userIds } = roomData
       const newRoom = await Room.create({ name })
-      const users = await User.findAll({
+      let users = await User.findAll({
         where: {
           id: {
             [Sequelize.Op.in]: userIds,
           },
         },
       })
+      users.push(user)
       await newRoom.setUsers(users)
 
       for (let userId of userIds) {
