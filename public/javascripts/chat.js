@@ -724,7 +724,10 @@ const handleNewRoom = newRoom => {
   const msgPreview = "هنوز پیامی نیست"
   const createdAt = ""
   let item = `
-    <li id="room-${id}" class="text-end p-2 w-100 border-bottom">   
+    <li
+      id="room-${id}" 
+      class="list-group-item text-end p-2 w-100 border-bottom"
+    >   
       <a
         onclick="selectChat(${id})"
         class="chats-list-link w-100 d-flex flex-row-reverse justify-content-start align-items-center"
