@@ -101,7 +101,6 @@ const makeChatListAndJoin = async (socket, roomsData, userId) => {
   chatList.sort((a, b) => {
     const aLastUpdate = a.lastMessage ? a.lastMessage.createdAt : a.createdAt
     const bLastUpdate = b.lastMessage ? b.lastMessage.createdAt : b.createdAt
-    console.log(Date.parse(bLastUpdate) - Date.parse(aLastUpdate))
     return Date.parse(bLastUpdate) - Date.parse(aLastUpdate)
   })
 
