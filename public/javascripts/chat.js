@@ -308,7 +308,7 @@ const generateOthersTextMsg = message => {
       state.editing = 0
     } else if (state.currentAction === "uploading" || state.currentAction === "upload-finished") cancelUploading()
     commentedName.innerHTML = sender.name
-    cmntText.value = yourMsg.innerHTML.trim()
+    cmntText.value = yourMsg.innerText.trim()
     input.focus()
 
     state.currentAction = "reply"
@@ -637,7 +637,7 @@ const generateOthersFileMsg = message => {
       state.editing = 0
     } else if (state.currentAction === "uploading" || state.currentAction === "upload-finished") cancelUploading()
     commentedName.innerHTML = sender.name
-    cmntText.value = yourMsg.innerHTML.trim()
+    cmntText.value = yourMsg.innerText.trim()
     input.focus()
 
     state.currentAction = "reply"
