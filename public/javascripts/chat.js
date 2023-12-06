@@ -537,10 +537,9 @@ const generateOthersFileMsg = message => {
       break
 
     default:
-      fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)` + text ? ` - ` : ""
+      fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)${text ? ` - ` : ""}`
       break
   }
-  console.log(File.mimeType.split("/")[0], fileLink)
   if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
     commentedDisplay = "d-flex"
     commentedText = repliedTo.text ? repliedTo.text : repliedTo.File.originalName
