@@ -37,6 +37,7 @@ const roomNameModalMsg = document.getElementById("roomNameModalMsg")
 const newRoomName = document.getElementById("newRoomName")
 const confirmRoomName = document.getElementById("confirmRoomName")
 const addUsersToRoom = document.getElementById("addUsersToRoom")
+const fullPage = document.getElementById("fullpage")
 
 const uploadController = new AbortController()
 const instance = axios.create({
@@ -58,6 +59,14 @@ let state = {
 
 const scrollChatDown = () => {
   msgListSection.scrollTo(0, messageList.scrollHeight)
+}
+
+const imageLoaded = imgElement => {
+  scrollChatDown()
+  imgElement.onclick = () => {
+    fullPage.style.backgroundImage = 'url(' + imgElement.src + ')'
+    fullPage.style.display = 'block'
+  }
 }
 
 const generateOwnTextMsg = message => {
@@ -346,7 +355,7 @@ const generateOwnFileMsg = message => {
           height: auto;
           width: auto;
         "
-        onload="scrollChatDown()"
+        onload="imageLoaded(this)"
       />`
       break
 
@@ -526,7 +535,7 @@ const generateOthersFileMsg = message => {
           height: auto;
           width: auto;
         "
-        onload="scrollChatDown()"
+        onload="imageLoaded(this)"
       />`
       break
 
