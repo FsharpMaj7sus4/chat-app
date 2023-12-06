@@ -1209,6 +1209,7 @@ fileUploadButton.onclick = () => {
 fileUploadBoxClose.onclick = cancelUploading
 
 newRoomButton.onclick = () => {
+  allUsersList.innerHTML = ""
   for (let user of Object.values(state.allUsers)) {
     if (user.id === userId) {
       continue
