@@ -57,6 +57,13 @@ let state = {
   newRoomUsers: [],
 }
 
+const dateOptions = {
+  month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit',
+  hour12: false,
+  // timeZone: 'Tehran' 
+}
+
 const scrollChatDown = () => {
   msgListSection.scrollTo(0, messageList.scrollHeight)
 }
@@ -72,6 +79,9 @@ const imageLoaded = imgElement => {
 const generateOwnTextMsg = message => {
   const { text, repliedTo, isSeen } = message
   const messageId = message.id
+  const createdAt = new Intl
+    .DateTimeFormat('fa-IR', dateOptions)
+    .format(new Date(message.createdAt))
   let commentedDisplay = ""
   let commentedText = ""
   let commentedSender = ""
@@ -147,8 +157,7 @@ const generateOwnTextMsg = message => {
       <div
         class="d-flex justify-content-start align-items-center px-2 mt-1"
       >
-        <small class="dateTime-text text-secondary me-2">05/11</small>
-        <small class="dateTime-text text-secondary">06:13</small>
+        <small class="dateTime-text text-secondary me-2">${createdAt}</small>
       </div>
     </div>
   </div>`
@@ -218,8 +227,11 @@ const generateOwnTextMsg = message => {
 }
 
 const generateOthersTextMsg = message => {
-  const { text, RoomId, senderId, repliedTo, createdAt, sender } = message
+  const { text, RoomId, senderId, repliedTo, sender } = message
   const messageId = message.id
+  const createdAt = new Intl
+    .DateTimeFormat('fa-IR', dateOptions)
+    .format(new Date(message.createdAt))
   let commentedDisplay = ""
   let commentedText = ""
   let commentedSender = ""
@@ -285,8 +297,7 @@ const generateOthersTextMsg = message => {
       <div
         class="d-flex justify-content-end align-items-center px-2 mt-1"
       >
-        <small class="dateTime-text text-secondary">05/11</small>
-        <small class="dateTime-text text-secondary ms-2">06:13</small>
+        <small class="dateTime-text text-secondary me-2">${createdAt}</small>
       </div>
     </div>
   </div>`
@@ -338,6 +349,9 @@ const generateOthersTextMsg = message => {
 const generateOwnFileMsg = message => {
   const { text, repliedTo, isSeen, FileId, File } = message
   const messageId = message.id
+  const createdAt = new Intl
+    .DateTimeFormat('fa-IR', dateOptions)
+    .format(new Date(message.createdAt))
   let commentedDisplay = ""
   let commentedText = ""
   let commentedSender = ""
@@ -445,8 +459,7 @@ const generateOwnFileMsg = message => {
       <div
         class="d-flex justify-content-start align-items-center px-2 mt-1"
       >
-        <small class="dateTime-text text-secondary me-2">05/11</small>
-        <small class="dateTime-text text-secondary">06:13</small>
+        <small class="dateTime-text text-secondary me-2">${createdAt}</small>
       </div>
     </div>
   </div>`
@@ -516,8 +529,11 @@ const generateOwnFileMsg = message => {
 }
 
 const generateOthersFileMsg = message => {
-  const { text, RoomId, senderId, repliedTo, createdAt, sender, FileId, File } = message
+  const { text, RoomId, senderId, repliedTo, sender, FileId, File } = message
   const messageId = message.id
+  const createdAt = new Intl
+    .DateTimeFormat('fa-IR', dateOptions)
+    .format(new Date(message.createdAt))
   let commentedDisplay = ""
   let commentedText = ""
   let commentedSender = ""
@@ -613,8 +629,7 @@ const generateOthersFileMsg = message => {
         <div
           class="d-flex justify-content-end align-items-center px-2 mt-1"
         >
-          <small class="dateTime-text text-secondary">05/11</small>
-          <small class="dateTime-text text-secondary ms-2">06:13</small>
+          <small class="dateTime-text text-secondary me-2">${createdAt}</small>
         </div>
       </div>
     </div>
@@ -918,7 +933,9 @@ socket.once("allUsers&MyRooms", data => {
       createdAt = ""
     } else {
       msgPreviewSender = room.lastMessage["sender.name"] + " :"
-      createdAt = room.lastMessage.createdAt
+      createdAt = new Intl
+        .DateTimeFormat('fa-IR', dateOptions)
+        .format(new Date(room.lastMessage.createdAt))
       if (room.lastMessage.text && !room.lastMessage.file) msgPreview = room.lastMessage.text
       else if (!room.lastMessage.text && room.lastMessage.file) msgPreview = room.lastMessage.file
       else msgPreview = `(File) ${room.lastMessage.text}`
