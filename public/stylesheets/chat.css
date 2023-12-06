@@ -313,6 +313,13 @@ body {
   background-color: black;
 }
 
+.text-border-white {
+  text-shadow: -1px  1px 0 rgb(204, 204, 204), 
+                1px  1px 0 rgb(204, 204, 204), 
+                1px -1px 0 rgb(204, 204, 204), 
+               -1px -1px 0 rgb(204, 204, 204); 
+}
+
 @media (max-width: 576px) {
   .desktop-chat {
     display: none;

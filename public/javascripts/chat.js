@@ -677,9 +677,11 @@ const unlockControls = () => {
 }
 
 const selectChat = roomId => {
-  if (state.currentRoom === 0) inputSection.classList.remove("d-none")
-  if (state.currentRoom !== 0) document.getElementById(`room-${state.currentRoom}`).classList.remove("active")
-  document.getElementById(`room-${roomId}`).classList.add("active")
+  if (state.currentRoom === 0)
+    inputSection.classList.remove("d-none")
+  if (state.currentRoom !== 0)
+    document.getElementById(`room-${state.currentRoom}`).classList.remove("active", "text-border-white")
+  document.getElementById(`room-${roomId}`).classList.add("active", "text-border-white")
   messageList.innerHTML = ""
   document.getElementById(`msgCount-${roomId}`).innerText = ""
   input.focus()
