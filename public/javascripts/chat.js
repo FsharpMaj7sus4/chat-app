@@ -56,6 +56,10 @@ let state = {
   newRoomUsers: [],
 }
 
+const scrollChatDown = () => {
+  msgListSection.scrollTo(0, messageList.scrollHeight)
+}
+
 const generateOwnTextMsg = message => {
   const { text, repliedTo, isSeen } = message
   const messageId = message.id
@@ -141,7 +145,7 @@ const generateOwnTextMsg = message => {
   </div>`
 
   messageList.insertAdjacentHTML("beforeend", item)
-  msgListSection.scrollTo(0, messageList.scrollHeight)
+  scrollChatDown()
 
   const commented = document.querySelector(`#commented-${messageId}`)
   const msgComment = document.querySelector(`#msgComment-${messageId}`)
@@ -279,7 +283,7 @@ const generateOthersTextMsg = message => {
   </div>`
 
   messageList.insertAdjacentHTML("beforeend", item)
-  msgListSection.scrollTo(0, messageList.scrollHeight)
+  scrollChatDown()
 
   const commented = document.querySelector(`#commented-${messageId}`)
   const msgComment = document.querySelector(`#msgComment-${messageId}`)
@@ -342,6 +346,7 @@ const generateOwnFileMsg = message => {
           height: auto;
           width: auto;
         "
+        onload="scrollChatDown()"
       />`
       break
 
@@ -438,7 +443,7 @@ const generateOwnFileMsg = message => {
   </div>`
 
   messageList.insertAdjacentHTML("beforeend", item)
-  msgListSection.scrollTo(0, messageList.scrollHeight)
+  scrollChatDown()
 
   const commented = document.querySelector(`#commented-${messageId}`)
   const msgComment = document.querySelector(`#msgComment-${messageId}`)
@@ -521,6 +526,7 @@ const generateOthersFileMsg = message => {
           height: auto;
           width: auto;
         "
+        onload="scrollChatDown()"
       />`
       break
 
@@ -534,6 +540,7 @@ const generateOthersFileMsg = message => {
       fileLink = `(<a href="/uploads/${File.fileName}">${File.originalName}</a>)` + text ? ` - ` : ""
       break
   }
+  console.log(File.mimeType.split("/")[0], fileLink)
   if (repliedTo && (repliedTo.text !== null || (repliedTo.File && repliedTo.File.originalName !== null))) {
     commentedDisplay = "d-flex"
     commentedText = repliedTo.text ? repliedTo.text : repliedTo.File.originalName
@@ -606,7 +613,7 @@ const generateOthersFileMsg = message => {
   </div>`
 
   messageList.insertAdjacentHTML("beforeend", item)
-  msgListSection.scrollTo(0, messageList.scrollHeight)
+  scrollChatDown()
 
   const commented = document.querySelector(`#commented-${messageId}`)
   const msgComment = document.querySelector(`#msgComment-${messageId}`)
@@ -1023,7 +1030,7 @@ socket.on("roomData", data => {
       else generateOthersTextMsg(message)
     }
   }
-  msgListSection.scrollTo(0, messageList.scrollHeight)
+  scrollChatDown()
   socket.emit("seen", state.currentRoom)
 })
 
