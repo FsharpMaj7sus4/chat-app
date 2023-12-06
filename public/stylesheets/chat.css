@@ -314,10 +314,10 @@ body {
 }
 
 .text-border-white {
-  text-shadow: -1px  1px 0 rgb(204, 204, 204), 
-                1px  1px 0 rgb(204, 204, 204), 
-                1px -1px 0 rgb(204, 204, 204), 
-               -1px -1px 0 rgb(204, 204, 204); 
+  text-shadow: -1px  1px 1px white, 
+                1px  1px 1px white, 
+                1px -1px 1px white, 
+               -1px -1px 1px white; 
 }
 
 @media (max-width: 576px) {
