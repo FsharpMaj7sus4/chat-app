@@ -1,7 +1,7 @@
 module.exports = (Sequelize, sequelize) => {
     const Message = sequelize.define("Message", {
         text: {
-            type: Sequelize.STRING,
+            type: Sequelize.TEXT,
             defaultValue: ''
         },
         isSeen: {
