@@ -723,7 +723,7 @@ const cancelUploading = () => {
   state.uploadingText = ""
 }
 
-const onUploadProgress = () => {
+const onUploadProgress = event => {
   const percentage = Math.round((100 * event.loaded) / event.total)
   percentageElement.innerHTML = percentage + "%"
   progressBarElement.setAttribute("aria-valuenow", percentage)
