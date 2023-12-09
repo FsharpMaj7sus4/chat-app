@@ -24,6 +24,7 @@ app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, "public")))
 
+app.use("/favicon.ico", express.static(path.join(__dirname, "/public/images/favicon.ico")))
 app.use("/", indexRouter)
 app.use("/", authRouter)
 app.use("/users", usersRouter)
