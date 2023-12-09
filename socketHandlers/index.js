@@ -193,7 +193,13 @@ io.on("connection", async socket => {
 
     socket.on("newTextMessage", async data => {
       const { roomId, text, repliedToId } = data
-      const messageInfo = Object.assign({}, { text }, { RoomId: roomId }, { senderId: user.id }, repliedToId ? { repliedToId } : null)
+      const messageInfo = Object.assign(
+        {},
+        { text },
+        { RoomId: roomId },
+        { senderId: user.id },
+        repliedToId ? { repliedToId } : null
+      )
       let newMessage = await Message.create(messageInfo).then(message => message.get({ plain: true }))
       if (repliedToId) {
         newMessage.repliedTo = await getRepliedMessage(repliedToId)

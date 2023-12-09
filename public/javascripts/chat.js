@@ -63,6 +63,11 @@ const dateOptions = {
   hour12: false
 }
 
+String.prototype.toNotHTML = function() {
+  console.log(this)
+  return this.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
+
 const scrollChatDown = () => {
   msgListSection.scrollTo(0, messageList.scrollHeight)
 }
@@ -150,7 +155,7 @@ const generateOwnTextMsg = message => {
           class="message-text ms-2 mb-0"
           id="yourMsg-${messageId}"
         >
-          <span id="msgText-${messageId}">${text}</span>
+          <span id="msgText-${messageId}">${text.toNotHTML()}</span>
         </p>
       </div>
       <div
@@ -290,7 +295,7 @@ const generateOthersTextMsg = message => {
           class="message-text ms-2 mb-0"
           id="yourMsg-${messageId}"      
         >
-          <span id="msgText-${messageId}">${text}</span>
+          <span id="msgText-${messageId}">${text.toNotHTML()}</span>
         </p>
       </div>
       <div
@@ -451,7 +456,7 @@ const generateOwnFileMsg = message => {
             class="message-text ms-2 mb-0"
             id="yourMsg-${messageId}"
           >
-            ${fileLink}<span id="msgText-${messageId}">${text}</span>
+            ${fileLink}<span id="msgText-${messageId}">${text.toNotHTML()}</span>
           </p>
         </div>
       </div>
@@ -622,7 +627,7 @@ const generateOthersFileMsg = message => {
             class="message-text ms-2 mb-0"
             id="yourMsg-${messageId}"      
           >
-            ${fileLink}<span id="msgText-${messageId}">${text}</span>
+            ${fileLink}<span id="msgText-${messageId}">${text.toNotHTML()}</span>
           </p>
         </div>
         <div
@@ -935,9 +940,9 @@ socket.once("allUsers&MyRooms", data => {
       createdAt = new Intl
         .DateTimeFormat('fa-IR', dateOptions)
         .format(new Date(room.lastMessage.createdAt))
-      if (room.lastMessage.text && !room.lastMessage.file) msgPreview = room.lastMessage.text
+      if (room.lastMessage.text && !room.lastMessage.file) msgPreview = room.lastMessage.text.toNotHTML()
       else if (!room.lastMessage.text && room.lastMessage.file) msgPreview = room.lastMessage.file
-      else msgPreview = `(File) ${room.lastMessage.text}`
+      else msgPreview = `(File) ${room.lastMessage.text.toNotHTML()}`
     }
     let roomName = room.name
     let onlineStatus = ""
@@ -1012,8 +1017,8 @@ socket.on("newTextMessage", message => {
     const chatMsgCount = Number(chatMsgCountElement.innerText)
     chatMsgCountElement.innerText = chatMsgCount + 1
   }
-  document.getElementById(`lastText-${RoomId}`).innerHTML = text
-  document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
+  document.getElementById(`lastText-${RoomId}`).innerText = text.toNotHTML()
+  document.getElementById(`lastDate-${RoomId}`).innerText = createdAt
   const chatItems = document.getElementsByTagName("li")
   chatItems[0].parentNode.insertBefore(chatItems[`room-${RoomId}`], chatItems[0])
 })
@@ -1032,8 +1037,8 @@ socket.on("newFileMessage", message => {
     const chatMsgCount = Number(chatMsgCountElement.innerText)
     chatMsgCountElement.innerText = chatMsgCount + 1
   }
-  document.getElementById(`lastText-${RoomId}`).innerHTML = text ? text : `(${File.originalName})`
-  document.getElementById(`lastDate-${RoomId}`).innerHTML = createdAt
+  document.getElementById(`lastText-${RoomId}`).innerText = text ? text.toNotHTML() : `(${File.originalName})`
+  document.getElementById(`lastDate-${RoomId}`).innerText = createdAt
   const chatItems = document.getElementsByTagName("li")
   chatItems[0].parentNode.insertBefore(chatItems[`room-${RoomId}`], chatItems[0])
 })
@@ -1062,7 +1067,7 @@ socket.on("roomData", data => {
 
 socket.on("editMessage", editedMsg => {
   if (editedMsg.RoomId === state.currentRoom) {
-    document.querySelector(`#msgText-${editedMsg.id}`).innerHTML = editedMsg.text
+    document.querySelector(`#msgText-${editedMsg.id}`).innerText = editedMsg.text
   }
 })
 
@@ -1099,7 +1104,7 @@ commentMsgClose.onclick = () => {
 }
 
 sendButton.onclick = e => {
-  if (input.value) {
+  if (input.value.trim()) {
     let newMessage = {}
     switch (state.currentAction) {
       case "reply":
@@ -1185,7 +1190,7 @@ fileUploadButton.onclick = () => {
     state.currentAction = "uploading"
 
     const file = inputElement.files[0]
-    fileName.innerHTML = file.name
+    fileName.innerText = file.name
     fileUploadBox.style.display = "flex"
 
     try {
