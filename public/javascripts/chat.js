@@ -64,7 +64,6 @@ const dateOptions = {
 }
 
 String.prototype.toNotHTML = function() {
-  console.log(this)
   return this.replace(/</g, "&lt;").replace(/>/g, "&gt;")
 }
 
@@ -882,6 +881,27 @@ const showOtherUsers = () => {
   otherUsersModal.show()
 }
 
+const isFile = (maybeFile) => {
+  return new Promise((resolve, reject) => {
+    if (maybeFile.type !== '') {
+      return resolve(maybeFile)
+    }
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      if (
+        reader.error &&
+        (
+          reader.error.name === 'NotFoundError' ||
+          reader.error.name === 'NotReadableError'
+        )) {
+        return reject(reader.error.name)
+      }
+      resolve(maybeFile)
+    }
+    reader.readAsBinaryString(maybeFile)
+  })
+}
+
 socket.on("newUser", user => {
   state.allUsers[user.id] = {
     ...user,
@@ -1183,62 +1203,65 @@ sendButton.onclick = e => {
 fileUploadButton.onclick = () => {
   var inputElement = document.createElement("input")
   inputElement.type = "file"
-  // Set accept to the file types you want the user to select.
-  // Include both the file extension and the mime type
-  // inputElement.accept = accept;
   inputElement.addEventListener("change", async () => {
     state.currentAction = "uploading"
 
-    const file = inputElement.files[0]
-    fileName.innerText = file.name
-    fileUploadBox.style.display = "flex"
-
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-      const res = await axios({
-        method: "post",
-        url: "/upload",
-        data: formData,
-        signal: uploadController.signal,
-        onUploadProgress,
+    const selectedFileOrDir = inputElement.files[0]
+    isFile(selectedFileOrDir)
+      .then(async file => {
+        fileName.innerText = file.name
+        fileUploadBox.style.display = "flex"
+    
+        try {
+          const formData = new FormData()
+          formData.append("file", file)
+          const res = await axios({
+            method: "post",
+            url: "/upload",
+            data: formData,
+            signal: uploadController.signal,
+            onUploadProgress,
+          })
+    
+          const { originalname, filename, size, mimetype } = res.data
+          state.uploadingFile = {
+            originalName: originalname,
+            fileName: filename,
+            size,
+            mimeType: mimetype,
+          }
+    
+          // currentAction === uploading
+          if (state.uploadingText) {
+            socket.emit("newFileMessage", {
+              text: state.uploadingText !== "MESSAGE_SENT_WITHOUT_TEXT_BUT_WITH_FILE" ? state.uploadingText : "",
+              roomId: state.currentRoom,
+              file: state.uploadingFile,
+            })
+    
+            fileUploadBox.style.display = "none"
+            progressBarElement.classList.remove("bg-success")
+            progressBarElement.classList.add("bg-info")
+            progressBarElement.classList.add("progress-bar-striped")
+            unlockControls()
+    
+            state.uploadingFile = {}
+            state.uploadingText = ""
+            state.currentAction = "none"
+          } else {
+            progressBarElement.classList.add("bg-success")
+            progressBarElement.classList.remove("bg-info")
+            progressBarElement.classList.remove("progress-bar-striped")
+    
+            state.currentAction = "upload-finished"
+          }
+        } catch (err) {
+          console.log("axios error: ", err)
+        }
       })
-
-      const { originalname, filename, size, mimetype } = res.data
-      state.uploadingFile = {
-        originalName: originalname,
-        fileName: filename,
-        size,
-        mimeType: mimetype,
-      }
-
-      // currentAction === uploading
-      if (state.uploadingText) {
-        socket.emit("newFileMessage", {
-          text: state.uploadingText !== "MESSAGE_SENT_WITHOUT_TEXT_BUT_WITH_FILE" ? state.uploadingText : "",
-          roomId: state.currentRoom,
-          file: state.uploadingFile,
-        })
-
-        fileUploadBox.style.display = "none"
-        progressBarElement.classList.remove("bg-success")
-        progressBarElement.classList.add("bg-info")
-        progressBarElement.classList.add("progress-bar-striped")
-        unlockControls()
-
-        state.uploadingFile = {}
-        state.uploadingText = ""
-        state.currentAction = "none"
-      } else {
-        progressBarElement.classList.add("bg-success")
-        progressBarElement.classList.remove("bg-info")
-        progressBarElement.classList.remove("progress-bar-striped")
-
-        state.currentAction = "upload-finished"
-      }
-    } catch (err) {
-      console.log("axios error: ", err)
-    }
+      .catch(error => {
+        // they've selected a directory
+      })
   })
 
   inputElement.dispatchEvent(new MouseEvent("click"))
