@@ -241,8 +241,12 @@ io.on("connection", async socket => {
       }
     })
 
-    socket.on("deleteFile", async fileName => {
-      fs.unlinkSync(`${__dirname}/public/uploads/${fileName}`)
+    socket.on("deleteFile", fileName => {
+      try {
+        fs.unlinkSync(`${__dirname}/../public/uploads/${fileName}`)
+      } catch (error) {
+        console.log(error)
+      }
     })
 
     socket.on("seen", async roomId => {
